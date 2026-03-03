@@ -7,4 +7,22 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Silk.NET.GLFW" Version="2.22.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.1" />
+    <PackageReference Include="Svg.Skia" Version="3.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="XchyUI">
+      <HintPath>libs\XchyUI.dll</HintPath>
+    </Reference>
+    <Reference Include="XchyUI.GLFW">
+      <HintPath>libs\XchyUI.GLFW.dll</HintPath>
+    </Reference>
+    <Reference Include="XchyUI.SkiaSharp">
+      <HintPath>libs\XchyUI.SkiaSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

@@ -1,8 +1,28 @@
 {
   "version": 2,
-  "dgSpecHash": "doHJWkcaFTs=",
+  "dgSpecHash": "NaRkP0s90Q4=",
   "success": true,
   "projectFilePath": "C:\\code\\demo\\XchyUIDemo\\XchyUIDemo\\XchyUIDemo.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\54425\\.nuget\\packages\\excss\\4.3.1\\excss.4.3.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.dotnet.platformabstractions\\3.1.6\\microsoft.dotnet.platformabstractions.3.1.6.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.extensions.dependencymodel\\8.0.0\\microsoft.extensions.dependencymodel.8.0.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\shimskiasharp\\3.2.1\\shimskiasharp.3.2.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\silk.net.core\\2.22.0\\silk.net.core.2.22.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\silk.net.glfw\\2.22.0\\silk.net.glfw.2.22.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\skiasharp\\3.119.1\\skiasharp.3.119.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\skiasharp.nativeassets.macos\\3.119.1\\skiasharp.nativeassets.macos.3.119.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\skiasharp.nativeassets.win32\\3.119.1\\skiasharp.nativeassets.win32.3.119.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\svg.custom\\3.2.1\\svg.custom.3.2.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\svg.model\\3.2.1\\svg.model.3.2.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\svg.skia\\3.2.1\\svg.skia.3.2.1.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\system.numerics.vectors\\4.5.0\\system.numerics.vectors.4.5.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\system.text.json\\8.0.0\\system.text.json.8.0.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\ultz.native.glfw\\3.4.0\\ultz.native.glfw.3.4.0.nupkg.sha512"
+  ],
   "logs": []
 }
