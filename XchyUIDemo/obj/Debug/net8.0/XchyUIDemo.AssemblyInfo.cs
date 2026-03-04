@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("XchyUIDemo")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3b641a600ed1fd9701a81c53690b729975f13ee3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9a82f45c52178dc38f414367f9aa481ab70c2358")]
 [assembly: System.Reflection.AssemblyProductAttribute("XchyUIDemo")]
 [assembly: System.Reflection.AssemblyTitleAttribute("XchyUIDemo")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

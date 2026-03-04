@@ -7,6 +7,7 @@ using XchyUI.animation;
 using XchyUI.GLFW.window;
 using XchyUI.models;
 using XchyUI.navigation;
+using XchyUI.theme;
 using XchyUI.utils;
 using XchyUI.widgets;
 using XchyUI.widgets.extensions;
@@ -42,7 +43,7 @@ namespace XchyUIDemo
                        .H3() //内置基础样式
                        .Binding(counterNum, (builder, num) =>
                        {
-                           builder.TextValue($"计数器：{num}");
+                           builder.TextValue($"一个简单的计数器：{num}");
                        }, needLayout: true); //改变文本需要重新布局，默认为false
 
                     // 无Timer循环动画
@@ -64,7 +65,10 @@ namespace XchyUIDemo
                     // 点击交互
                     Text("点击增加计数")
                        .PrimaryButton()
-                       .Click(() => counterNum.Value++);
+                       .Click(() =>
+                       {
+                           counterNum.Value++;
+                       });
                 })
                  .Size(WRAP)
                  .Space(10);
