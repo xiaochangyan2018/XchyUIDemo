@@ -101,3 +101,5 @@ ContentView(() => {
    .Size(WRAP)
    .Space(10);
 });
+
+具体如何使用加微信号xiaochangyanwx 入群分享
