@@ -106,6 +106,16 @@ ContentView(() => {
 ### 可以下载下来直接visual stuido 2022及以上打开，直接运行, 项目会一直优化更新
 
 ### 热重载使用：
-修改文件后按ctrl+s -> alt+f10 -> 点击窗口页面会自动更新（只要窗口重新获取到焦点就会更新只有调试模式下有用）
+框架并没有提供完整的热重载功能，而是提供刷新界面的方法
+```C#
+XWidget.HotReload.Send(true);
+RenderImp.InvalidateAll();
+```
+demo里面加了一个 HotkeyManager用来监听ctrl+s来出发alt+10 触发热重载功能，然后再调用上面的方法刷新界面，同时也需要在.csproj文件里面添加HotReloadEnabled为true
+```C#
+<HotReloadEnabled>true</HotReloadEnabled>
+```
+
+### 关于win7系统的支持，当前因为使用的是.net 8 + SkiaSharp3.119.1不能在win上运行，后面会出一个低版本的demo用在win7运行
 
 该UI引擎具体具体如何使用加微信号 ***xiaochangyanwx*** 入群分享

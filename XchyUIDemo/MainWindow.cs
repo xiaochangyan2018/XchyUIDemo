@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ExCSS;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,7 @@ using XchyUI.models;
 using XchyUI.navigation;
 using XchyUI.theme;
 using XchyUI.utils;
+using XchyUI.views;
 using XchyUI.widgets;
 using XchyUI.widgets.extensions;
 using XchyUIDemo.res;
@@ -61,7 +63,6 @@ namespace XchyUIDemo
                        .Binding(animateValue, (builder, value) =>
                            builder.Rotate(value * 360)
                        );
-
                     // 点击交互
                     Text("点击增加计数")
                        .PrimaryButton()
@@ -69,6 +70,24 @@ namespace XchyUIDemo
                        {
                            counterNum.Value++;
                        });
+                    var numState = StateValueOf(0);
+                    Column(numState, num =>
+                    {
+
+                        for (int i = num; i < 4; i++)
+                        {
+                            Text("测试热重载:" + i);
+                        }
+                    })
+                    .Size(WRAP)
+                    .Space(10);
+
+                    Text("测试")
+                    .PrimaryButton()
+                    .Click(() =>
+                    {
+                        numState.Value++;
+                    });
                 })
                  .Size(WRAP)
                  .Space(10);
