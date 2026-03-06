@@ -106,12 +106,15 @@ ContentView(() => {
 ### 可以下载下来直接visual stuido 2022及以上打开，直接运行, 项目会一直优化更新
 
 ### 热重载使用：
-框架并没有提供完整的热重载功能，而是提供刷新界面的方法
+框架并没有提供完整的热重载功能，而是只提供刷新界面的方法，热重载的能力是用的visual studio自己的能力
+
+下面是界面全部刷新的方法
 ```C#
 XWidget.HotReload.Send(true);
 RenderImp.InvalidateAll();
 ```
 demo里面加了一个 HotkeyManager用来监听ctrl+s来出发alt+10 触发热重载功能，然后再调用上面的方法刷新界面，同时也需要在.csproj文件里面添加HotReloadEnabled为true
+
 ```C#
 <HotReloadEnabled>true</HotReloadEnabled>
 ```
