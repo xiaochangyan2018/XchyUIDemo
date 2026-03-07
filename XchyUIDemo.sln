@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36915.13 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11520.95 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XchyUIDemo", "XchyUIDemo\XchyUIDemo.csproj", "{89C446F4-BB9C-4C9B-88CE-9F71D8F336DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XchyUIDemo.SharpShap2x", "XchyUIDemo.SharpShap2x\XchyUIDemo.SharpShap2x.csproj", "{C36ABFFF-D639-40EE-8E3F-8B0D904111EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{89C446F4-BB9C-4C9B-88CE-9F71D8F336DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89C446F4-BB9C-4C9B-88CE-9F71D8F336DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89C446F4-BB9C-4C9B-88CE-9F71D8F336DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C36ABFFF-D639-40EE-8E3F-8B0D904111EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C36ABFFF-D639-40EE-8E3F-8B0D904111EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C36ABFFF-D639-40EE-8E3F-8B0D904111EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C36ABFFF-D639-40EE-8E3F-8B0D904111EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

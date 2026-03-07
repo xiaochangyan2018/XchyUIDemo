@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "NaRkP0s90Q4=",
+  "dgSpecHash": "U2u+Z01GiE8=",
   "success": true,
   "projectFilePath": "C:\\code\\demo\\XchyUIDemo\\XchyUIDemo\\XchyUIDemo.csproj",
   "expectedPackageFiles": [
@@ -22,7 +22,11 @@
     "C:\\Users\\54425\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\6.0.0\\system.runtime.compilerservices.unsafe.6.0.0.nupkg.sha512",
     "C:\\Users\\54425\\.nuget\\packages\\system.text.encodings.web\\8.0.0\\system.text.encodings.web.8.0.0.nupkg.sha512",
     "C:\\Users\\54425\\.nuget\\packages\\system.text.json\\8.0.0\\system.text.json.8.0.0.nupkg.sha512",
-    "C:\\Users\\54425\\.nuget\\packages\\ultz.native.glfw\\3.4.0\\ultz.native.glfw.3.4.0.nupkg.sha512"
+    "C:\\Users\\54425\\.nuget\\packages\\ultz.native.glfw\\3.4.0\\ultz.native.glfw.3.4.0.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.24\\microsoft.windowsdesktop.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.24\\microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.24\\microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\54425\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.24\\microsoft.netcore.app.host.win-x64.8.0.24.nupkg.sha512"
   ],
   "logs": []
 }
