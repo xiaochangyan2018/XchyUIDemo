@@ -12,6 +12,7 @@ namespace XcyUI.views
         public int Key { get; set; }
         public XLayoutParams LayoutParams { get; private set; }
         public XEventParams EventParams { get; private set; }
+        public XAccessibilityParams Accessibility { get; private set; }
         internal XDrawCache DrawCache { get; private set; }
         public XView Parent { get; set; }
 
@@ -45,6 +46,7 @@ namespace XcyUI.views
         {
             LayoutParams = new XLayoutParams();
             EventParams = new XEventParams();
+            Accessibility = new XAccessibilityParams();
             DrawCache = new XDrawCache();
             IsMeasured = true;
         }
@@ -145,6 +147,7 @@ namespace XcyUI.views
         {
 
         }
+
         public bool IsCache => DrawCache.EnableCache;
         public void EnableCache( bool enable, XCacheType type = XCacheType.Pictrue)
         {

@@ -51,6 +51,17 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
+        private static XViewBuilder ClickableAccessibility(this XViewBuilder builder)
+        {
+            builder.View.EventParams.Focusable = true;
+            if (builder.View.Accessibility.Role == XAccessibilityRole.None)
+            {
+                builder.View.Accessibility.Role = XAccessibilityRole.Button;
+            }
+            builder.View.Accessibility.MergeDescendants = true;
+            return builder;
+        }
+
         public static XViewBuilder OnMove(this XViewBuilder builder, XFunction<XViewBuilder, XEventInfo> function, string key = "OnMove")
         {
             builder.View.AddEvent(XEventType.Move, key, (v, info) => function(builder, info));
@@ -93,6 +104,7 @@ namespace XcyUI.widgets.extensions
         public static XViewBuilder Click(this XViewBuilder builder, XFunction<XViewBuilder, XEventInfo> function, bool defaultEffect = true, string eventKey = "default_click")
         {
             builder.View.AddEvent(XEventType.Click,eventKey, (v, info) => function(builder, info));
+            builder.ClickableAccessibility();
             if (defaultEffect)
             {
                 builder.DefaultClickEffect();
@@ -107,6 +119,7 @@ namespace XcyUI.widgets.extensions
         public static XViewBuilder DoubleClick(this XViewBuilder builder, XFunction<XViewBuilder, XEventInfo> function, bool defaultEffect = true, string eventKey = "default_double_click")
         {
             builder.View.AddEvent(XEventType.DoubleClick, eventKey, (v, info) => function(builder, info));
+            builder.ClickableAccessibility();
             if (defaultEffect)
             {
                 builder.DefaultClickEffect();
@@ -132,6 +145,7 @@ namespace XcyUI.widgets.extensions
                 return builder;
             }
             builder.View.AddEvent(XEventType.Click, eventKey, function);
+            builder.ClickableAccessibility();
             if (defaultEffect)
             {
                 builder.DefaultClickEffect();

@@ -67,6 +67,7 @@ namespace XcyUI.GLFW.window
             OnLoad();
             RunAction?.Invoke();
             Render();
+            OnWindowReady();
             LoadIcon?.Invoke();
             LoadAction?.Invoke();
             glfw.ShowWindow(window);
@@ -216,6 +217,11 @@ namespace XcyUI.GLFW.window
         public unsafe virtual void OnLoad()
         {
             
+        }
+
+        protected virtual void OnWindowReady()
+        {
+
         }
 
         protected virtual void InitPlatforms()

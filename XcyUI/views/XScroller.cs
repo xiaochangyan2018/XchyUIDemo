@@ -19,7 +19,6 @@ namespace XcyUI.views
         public bool EnableScrolled { get; set; }
 
         private XPoint downPoint;
-        private int maxScrollerHeight;
         public XScroller()
         {
             Thickness = XThemeManager.Theme.Sizes.ScrollbarWidth.AsPx();
@@ -31,6 +30,10 @@ namespace XcyUI.views
         {
             HorizontalScollerBar = CreateScollerView(view);
             VerticalScollerBar = CreateScollerView(view);
+            HorizontalScollerBar.Accessibility.Role = XAccessibilityRole.ScrollBar;
+            HorizontalScollerBar.Accessibility.Name = "水平滚动条";
+            VerticalScollerBar.Accessibility.Role = XAccessibilityRole.ScrollBar;
+            VerticalScollerBar.Accessibility.Name = "垂直滚动条";
             HorizontalScollerBar.LayoutParams.Height = Thickness;
             HorizontalScollerBar.Height = Thickness;
             HorizontalScollerBar.LayoutParams.Margin = new XSpace(0, 0, 0, XThemeManager.Theme.Sizes.ScrollbarMargin.AsPx());

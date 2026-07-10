@@ -1,6 +1,6 @@
-﻿using SkiaSharp;
+using SkiaSharp;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using XcyUI.animation;
 using XcyUI.events;
 using XcyUI.models;
@@ -19,7 +19,7 @@ namespace XcyUI.SkiaSharp
         public XNavigationPage Navigation { get; private set; }
         public SKColor BackgoundColor { get; set; }
         private bool isDrak = false;
-        //private SKFont skFont;
+
         public SkiaRenderBackend()
         {
             SkiaDraw = new SkiaDraw();
@@ -27,32 +27,23 @@ namespace XcyUI.SkiaSharp
             RenderImp.SetDraw(SkiaDraw);
             isDrak = XTheme.DarkModeState.Value;
             BackgoundColor = XThemeManager.Theme.Colors.Background.ToSKColor();
-            //skFont = new SKFont()
-            //{
-            //    Subpixel = true,
-            //    LinearMetrics = true,
-            //    Hinting = SKFontHinting.Full,
-            //    Edging = SKFontEdging.SubpixelAntialias,
-            //    Size = 40,
-            //    Typeface = SKTypeface.FromFamilyName("Microsoft YaHei", new SKFontStyle(500, 6, SKFontStyleSlant.Upright))
-            //};
         }
+
         public void ResetSurface(int width, int height, object paramsData)
         {
             grContext?.Flush();
             grContext?.PurgeUnusedResources(100);
-            //grContext?.ResetContext();
             surface?.Dispose();
             CreateSurface(width, height);
         }
-        //GRGlGetProcedureAddressDelegate get;
+
         public void CreateSurface(int width, int height, object paramsData)
         {
             Delegate del = (Delegate)paramsData;
             GRGlGetProcedureAddressDelegate get = (GRGlGetProcedureAddressDelegate)Delegate.CreateDelegate(
                 typeof(GRGlGetProcedureAddressDelegate),
-                del.Target,    // 方法所属对象
-                del.Method     // 方法信息
+                del.Target,
+                del.Method
             );
             var gl = GRGlInterface.Create(get);
             grContext = GRContext.CreateGl(gl);
@@ -128,6 +119,16 @@ namespace XcyUI.SkiaSharp
         public void Open(XPage page)
         {
             Navigation?.Open(page);
+        }
+
+        public XAccessibilityNode GetAccessibilityTree()
+        {
+            return Navigation?.GetAccessibilityTree();
+        }
+
+        public List<XAccessibilityIssue> AuditAccessibility()
+        {
+            return Navigation?.AuditAccessibility() ?? new List<XAccessibilityIssue>();
         }
 
         public void Dispose()

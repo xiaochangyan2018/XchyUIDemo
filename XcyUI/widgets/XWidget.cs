@@ -224,6 +224,8 @@ namespace XcyUI.widgets
                 .Clip()
                 .TextDefault()
                 .Content(text)
+                .AccessibilityRole(XAccessibilityRole.TextBox)
+                .AccessibilityMultiline(false)
                 .Lines(1)
                 .Width(XLayoutParams.Fill)
                 .CursorColor(XTheme.DarkModeState.Value?xTheme.Colors.White:xTheme.Colors.Black)

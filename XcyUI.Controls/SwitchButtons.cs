@@ -35,10 +35,14 @@ namespace XcyUI.Controls
                 });
             })
             .Size(66, 33).Padding(horizontal: 2).Radius(16)
+            .AccessibilityRole(XAccessibilityRole.Switch)
+            .AccessibilityName("开关")
+            .AccessibilityChecked(selectedState.Value)
             .Bind(selectedState, (builder, isSelect) =>
             {
                 var backgroundColor = isSelect ? xTheme.Colors.Primary : xTheme.Colors.BaseBorder;
-                builder.Background(backgroundColor);
+                builder.Background(backgroundColor)
+                    .AccessibilityChecked(isSelect);
             })
             .Click(() =>
             {

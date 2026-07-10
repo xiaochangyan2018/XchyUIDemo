@@ -18,6 +18,7 @@ namespace XcyUI.events
         internal static List<XView> PreHoverViews = new List<XView>();
         //获取焦点的view
         public static XView FocusView { get; private set; }
+        public static event Action<XView> AccessibilityFocusChanged;
 
         public static int X { get; private set; }
         public static int Y { get; private set; }
@@ -27,13 +28,23 @@ namespace XcyUI.events
         }
         public static void ClearFocusView()
         {
+            var oldFocusView = FocusView;
             FocusView = null;
+            if (oldFocusView != null)
+            {
+                AccessibilityFocusChanged?.Invoke(null);
+            }
         }
         public static void Clear()
         {
+            var oldFocusView = FocusView;
             TargetView = null;
             HoverView = null;
             FocusView = null;
+            if (oldFocusView != null)
+            {
+                AccessibilityFocusChanged?.Invoke(null);
+            }
         }
         private static LinkedList<XView> views = new LinkedList<XView>();
 
@@ -79,6 +90,11 @@ namespace XcyUI.events
 
         private static void DoDispatch(XView root, XEventInfo info)
         {
+            if (IsInputEvent(info.EventType) && HandleKeyboard(root, info))
+            {
+                return;
+            }
+
             if (TargetView != null)
             {
                 HandleEvent(TargetView, info);
@@ -91,9 +107,7 @@ namespace XcyUI.events
             }
             if (info.EventType == XEventType.Down && FocusView!=null && !FocusView.RenderRect.Contain(info.Point))
             {
-                DoEvent(FocusView, info.Copy(XEventType.LossFocused), true);
-                RenderImp.Invalidate(FocusView);
-                FocusView = null;
+                SetFocus(null, info);
             }
             // 查找可以响应事件的view
             views.Clear();
@@ -185,19 +199,132 @@ namespace XcyUI.events
                     break;
                 case XEventType.Down:
                     TargetView = view;
-                    if (view.EventParams.Focusable && view != FocusView)
-                    {
-                        DoEvent(view, info.Copy(XEventType.Focused),true);
-                        if (FocusView != null)
-                        {
-                            DoEvent(FocusView, info.Copy(XEventType.LossFocused), true);
-                            FocusView.DrawCache.IsRefreshCache = true;
-                        }
-                        FocusView = view;
-                    }
+                    SetFocus(view, info);
                     break;
             }
             
+        }
+
+        public static bool SetFocus(XView view)
+        {
+            return SetFocus(view, null);
+        }
+
+        public static bool SetFocus(XView view, XEventInfo sourceInfo)
+        {
+            if (view == FocusView)
+            {
+                return true;
+            }
+
+            if (view != null && !CanReceiveFocus(view))
+            {
+                return false;
+            }
+
+            var oldFocusView = FocusView;
+            if (oldFocusView != null)
+            {
+                var lossInfo = sourceInfo?.Copy(XEventType.LossFocused) ?? new XEventInfo() { EventType = XEventType.LossFocused };
+                DoEvent(oldFocusView, lossInfo, true);
+                oldFocusView.DrawCache.IsRefreshCache = true;
+            }
+
+            FocusView = view;
+            if (FocusView != null)
+            {
+                var focusInfo = sourceInfo?.Copy(XEventType.Focused) ?? new XEventInfo() { EventType = XEventType.Focused };
+                focusInfo.X = FocusView.RenderRect.Center.X;
+                focusInfo.Y = FocusView.RenderRect.Center.Y;
+                DoEvent(FocusView, focusInfo, true);
+                FocusView.DrawCache.IsRefreshCache = true;
+                RenderImp.Invalidate(FocusView);
+            }
+
+            if (oldFocusView != null)
+            {
+                RenderImp.Invalidate(oldFocusView);
+            }
+
+            AccessibilityFocusChanged?.Invoke(FocusView);
+
+            return true;
+        }
+
+        public static bool MoveFocus(XView root, bool forward = true)
+        {
+            var focusableViews = XAccessibility.GetFocusableViews(root);
+            if (focusableViews.Count == 0)
+            {
+                return false;
+            }
+
+            var currentIndex = FocusView == null ? -1 : focusableViews.IndexOf(FocusView);
+            int nextIndex;
+            if (currentIndex < 0)
+            {
+                nextIndex = forward ? 0 : focusableViews.Count - 1;
+            }
+            else
+            {
+                nextIndex = forward ? currentIndex + 1 : currentIndex - 1;
+                if (nextIndex >= focusableViews.Count)
+                {
+                    nextIndex = 0;
+                }
+                else if (nextIndex < 0)
+                {
+                    nextIndex = focusableViews.Count - 1;
+                }
+            }
+
+            return SetFocus(focusableViews[nextIndex]);
+        }
+
+        public static bool Activate(XView view)
+        {
+            return Activate(view, null);
+        }
+
+        public static bool Activate(XView view, XEventInfo sourceInfo)
+        {
+            if (!XAccessibility.IsKeyboardActivatable(view))
+            {
+                return false;
+            }
+
+            var info = sourceInfo?.Copy(XEventType.Click) ?? new XEventInfo() { EventType = XEventType.Click };
+            info.X = view.RenderRect.Center.X;
+            info.Y = view.RenderRect.Center.Y;
+            info.IsLeft = true;
+            DoEvent(view, info, true);
+            RenderImp.Invalidate(view);
+            return true;
+        }
+
+        private static bool HandleKeyboard(XView root, XEventInfo info)
+        {
+            if (info.KeyValue == XKeyValue.Tab)
+            {
+                var isShift = (info.KeyModify & KeyModify.Shift) == KeyModify.Shift;
+                return MoveFocus(root, !isShift);
+            }
+
+            if ((info.KeyValue == XKeyValue.Enter || info.KeyValue == XKeyValue.Space)
+                && Activate(FocusView, info))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool CanReceiveFocus(XView view)
+        {
+            return view != null
+                && view.EventParams.Focusable
+                && XAccessibility.IsEnabled(view)
+                && XAccessibility.IsVisibleToAccessibility(view);
         }
 
         private static void PopEvent(XView view, XEventInfo info)
@@ -232,6 +359,10 @@ namespace XcyUI.events
                 info.EventType = isFocus ? XEventType.Focused : XEventType.LossFocused;
                 DoEvent(FocusView, info, true);
                 FocusView.DrawCache.IsRefreshCache = true;
+                if (isFocus)
+                {
+                    AccessibilityFocusChanged?.Invoke(FocusView);
+                }
             }
         }
 

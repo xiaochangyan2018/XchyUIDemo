@@ -16,6 +16,15 @@ namespace XcyUI.GLFW.manager
                 case Keys.End:
                     value = XKeyValue.End;
                     break;
+                case Keys.Space:
+                    value = XKeyValue.Space;
+                    break;
+                case Keys.Escape:
+                    value = XKeyValue.Escape;
+                    break;
+                case Keys.Tab:
+                    value = XKeyValue.Tab;
+                    break;
                 case Keys.Left:
                     value = XKeyValue.Left;
                     break;

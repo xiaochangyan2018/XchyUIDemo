@@ -20,20 +20,23 @@ namespace XcyUI.Controls
 
         public static XViewBuilder H1(this XViewBuilder builder)
         {
-            builder.Color(Theme.Colors.RegularText).FontSize(Theme.Sizes.H1).FontWeight(Theme.Weights.Large);
+            builder.Color(Theme.Colors.RegularText).FontSize(Theme.Sizes.H1).FontWeight(Theme.Weights.Large)
+                .AccessibilityHeadingLevel(1);
             return builder;
         }
 
         public static XViewBuilder H2(this XViewBuilder builder)
         {
-            builder.Color(Theme.Colors.RegularText).FontSize(Theme.Sizes.H2).FontWeight(Theme.Weights.Large);
+            builder.Color(Theme.Colors.RegularText).FontSize(Theme.Sizes.H2).FontWeight(Theme.Weights.Large)
+                .AccessibilityHeadingLevel(2);
             return builder;
         }
 
         public static XViewBuilder H3(this XViewBuilder builder)
         {
             builder.Color(Theme.Colors.RegularText)
-                .FontSize(Theme.Sizes.H3).FontWeight(Theme.Weights.Large);
+                .FontSize(Theme.Sizes.H3).FontWeight(Theme.Weights.Large)
+                .AccessibilityHeadingLevel(3);
             return builder;
         }
 

@@ -51,7 +51,9 @@ namespace XcyUI.Controls
                         Icon(SvgRes.WarnTriangleFilled).Size(34).Color(xTheme.Colors.Warning);
                         Text(dialogInfo.Title).H2();
                         Spacer(1).Weight(1);
-                        Icon(SvgRes.Close).Size(48).IconSize(24).Radius(xTheme.Radius.Middle).Click(() =>
+                        Icon(SvgRes.Close).Size(48).IconSize(24).Radius(xTheme.Radius.Middle)
+                        .AccessibilityName("关闭")
+                        .Click(() =>
                         {
                             visisbleState.Value = true;
                         });
@@ -73,6 +75,9 @@ namespace XcyUI.Controls
                     }).Width(FILL).Space(15).HorizontalAlignment(XHorizontalAlignment.Right);
                 }).Size(WRAP).Space(10).MinWidth(400)
                 .HorizontalAlignment(XHorizontalAlignment.Left)
+                .AccessibilityRole(XAccessibilityRole.Dialog)
+                .AccessibilityName(dialogInfo.Title)
+                .AccessibilityDescription(dialogInfo.Content)
                 .Card().Padding(20)
                 .Bind(animateValue, (builder, value) =>
                 {
@@ -105,6 +110,8 @@ namespace XcyUI.Controls
                 {
                     content.Invoke(visisbleState);
                 }).Size(WRAP)
+                .AccessibilityRole(XAccessibilityRole.Dialog)
+                .AccessibilityMergeDescendants()
                 .Card()
                 .Bind(animateValue, (builder, value) =>
                 {

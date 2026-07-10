@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using XcyUI.events;
 using XcyUI.expansions;
+using XcyUI.GLFW.accessibility;
 using XcyUI.GLFW.curor;
 using XcyUI.GLFW.manager;
 using XcyUI.GLFW.windowStyle;
@@ -18,6 +19,7 @@ namespace XcyUI.GLFW.window
         private const double doubleClickInterval = 300;
         private double lastClickTime;
         private MouseButton lastClickButton;
+        private WindowsUiaBridge accessibilityProvider;
 
         protected unsafe override void OnWindowCreate()
         {
@@ -72,6 +74,41 @@ namespace XcyUI.GLFW.window
             {
                 XThemeManager.Theme.DefaultFontName = "PingFang SC";
             }
+        }
+
+        protected override void OnWindowReady()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                InstallAccessibilityProvider();
+            }
+        }
+
+        private unsafe void InstallAccessibilityProvider()
+        {
+            var hwnd = WindowStyleImp.GetWin32Window(window);
+            if (hwnd == System.IntPtr.Zero)
+            {
+                return;
+            }
+
+            accessibilityProvider?.Dispose();
+            accessibilityProvider = new WindowsUiaBridge(
+                hwnd,
+                () => RenderBackend?.GetAccessibilityTree(),
+                action => ExecuteOnMainThread(action));
+            AddCloseAction(() =>
+            {
+                accessibilityProvider?.Dispose();
+                accessibilityProvider = null;
+            });
+        }
+
+        public override void OnDestory()
+        {
+            accessibilityProvider?.Dispose();
+            accessibilityProvider = null;
+            base.OnDestory();
         }
 
         protected override unsafe void OnCursorEnterCallback(bool entered)
@@ -179,7 +216,7 @@ namespace XcyUI.GLFW.window
 
         protected override void OnKeyCallback(Keys key, int scanCode, InputAction action, KeyModifiers mods)
         {
-            if (XEvent.FocusView != null && action == InputAction.Press)
+            if (action == InputAction.Press)
             {
                 var actionEvent = new XEventInfo
                 {
@@ -187,7 +224,7 @@ namespace XcyUI.GLFW.window
                     EventType = XEventType.KeyPress,
                     KeyModify = (KeyModify)mods
                 };
-                DispatchEvent(XEvent.FocusView, actionEvent);
+                DispatchEvent(actionEvent);
             }
         }
 

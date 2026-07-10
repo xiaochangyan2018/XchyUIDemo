@@ -30,6 +30,8 @@ namespace XcyUI.Controls
         {
             var borderBursh = new XBrush() { StartColor = color, EndColor = color.Copy(0f), Direction = XGradientDirection.Round };
             return Spacer(size).Circle()
+               .AccessibilityRole(XAccessibilityRole.ProgressBar)
+               .AccessibilityValue("loading")
                .EnableCache(true)
                .EnableOverDraw(true)
                .Border(new XBorder() { Color = borderBursh, Size = new XSpace(borderSize.AsPx()) })
@@ -46,9 +48,12 @@ namespace XcyUI.Controls
         {
             return Spacer(size)
                 .Circle()
+                .AccessibilityRole(XAccessibilityRole.ProgressBar)
+                .AccessibilityValue(progress.Value.ToString("P0"))
                 .Border(xTheme.Colors.BaseBorder, borderSize)
                 .Bind(progress, (builder, value) =>
                 {
+                    builder.AccessibilityValue(value.ToString("P0"));
                     builder.View.Invalidate();
                 })
                 .OnDraw(builder =>

@@ -49,19 +49,24 @@ namespace XcyUI.models
     }
     public class XKeyValue
     {
+        public const int Space = 32;
         public const int Home = 35;
         public const int End = 36;
         public const int Left = 37;
         public const int Up = 38;
         public const int Right = 39;
         public const int Down = 40;
+        public const int Escape = 256;
+        public const int Tab = 258;
         public const int Delete = 46;
         public const int Backspace = 259;
         public const int Enter = 257;
     }
 
+    [Flags]
     public enum KeyModify
     {
+        None = 0,
         Shift = 0x0001,
         Control = 0x0002,
         Alt = 0x0004,
@@ -91,7 +96,13 @@ namespace XcyUI.models
             action.Y = Y;
             action.IsLeft = IsLeft;
             action.EventType = eventType;
+            action.ClickKey = ClickKey;
             action.WheelSize = WheelSize;
+            action.IsVerticalWheel = IsVerticalWheel;
+            action.KeyChar = KeyChar;
+            action.KeyValue = KeyValue;
+            action.KeyModify = KeyModify;
+            action.Value = Value;
             return action;
         }
     }

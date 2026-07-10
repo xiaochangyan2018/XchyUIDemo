@@ -22,6 +22,8 @@ namespace XcyUI.Controls
                 .FontWeight(Theme.Weights.Button)
                 .Border(Theme.Colors.Primary, 0)
                 .Radius(Theme.Radius.Middle)
+                .AccessibilityRole(XAccessibilityRole.Button)
+                .AccessibilityMergeDescendants()
                 .Click(function);
         }
 
@@ -45,6 +47,9 @@ namespace XcyUI.Controls
         {
             return builder.PrimaryButton()
                 .EnableEvent(false)
+                .Focusable(false)
+                .AccessibilityEnabled(false)
+                .TabIndex(-1)
                 .Shadow(new XShadow())
                .ColorAll(Theme.Colors.DisabledText)
                .Border(new XBorder())
@@ -54,6 +59,9 @@ namespace XcyUI.Controls
         public static XViewBuilder Disable(this XViewBuilder builder)
         {
             return builder.EnableEvent(false)
+               .Focusable(false)
+               .AccessibilityEnabled(false)
+               .TabIndex(-1)
                .Alpha(Theme.Colors.DisabledAlpha);
         }
     }

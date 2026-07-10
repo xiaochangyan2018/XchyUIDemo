@@ -102,6 +102,16 @@ namespace XcyUI.widgets.extensions
             if (builder.View is XGroup && builder.View.EventParams.Event(XEventType.Wheel) == null && builder.AsView<XGroup>()?.Scroller == null)
             {
                 var view = builder.AsView<XGroup>();
+                builder.Focusable(true);
+                if (builder.View.Accessibility.Role == XAccessibilityRole.None)
+                {
+                    builder.AccessibilityRole(XAccessibilityRole.Group);
+                }
+                if (string.IsNullOrEmpty(builder.View.Accessibility.Name))
+                {
+                    builder.AccessibilityName("滚动区域");
+                }
+                builder.KeyScroll(isVertical);
                 if (enableWheel)
                 {
                     var wheel = view.EventParams.EventOrCreate(XEventType.Wheel);
@@ -140,6 +150,42 @@ namespace XcyUI.widgets.extensions
                     });
                 }
             }
+            return builder;
+        }
+
+        private static XViewBuilder KeyScroll(this XViewBuilder builder, bool isVertical)
+        {
+            var view = builder.AsView<XGroup>();
+            if (view == null)
+            {
+                return builder;
+            }
+
+            builder.View.EventParams.EventOrCreate(XEventType.KeyPress).AddFunction("default_key_scroll", (v, info) =>
+            {
+                var size = 50.AsPx();
+                switch (info.KeyValue)
+                {
+                    case XKeyValue.Up:
+                        view.OnScolled(true, size);
+                        break;
+                    case XKeyValue.Down:
+                        view.OnScolled(true, -size);
+                        break;
+                    case XKeyValue.Left:
+                        view.OnScolled(false, size);
+                        break;
+                    case XKeyValue.Right:
+                        view.OnScolled(false, -size);
+                        break;
+                    case XKeyValue.Home:
+                        view.OnScolled(isVertical, int.MaxValue);
+                        break;
+                    case XKeyValue.End:
+                        view.OnScolled(isVertical, -int.MaxValue);
+                        break;
+                }
+            });
             return builder;
         }
 

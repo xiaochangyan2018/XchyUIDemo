@@ -14,6 +14,7 @@ namespace XcyUI.Controls
         public static XViewBuilder Tooltip(this XViewBuilder builder, string tips)
         {
             var tipsState = StateValueOf(tips, true);
+            builder.AccessibilityDescription(tips);
             builder.ToggleHover(isHover =>
             {
                 if (string.IsNullOrEmpty(tipsState.Value)) return;
@@ -30,6 +31,7 @@ namespace XcyUI.Controls
             {
                 Text(textState.Value)
                 .Alignment(XAlignment.LeftTop)
+                .AccessibilityRole(XAccessibilityRole.Tooltip)
                 .MiniCard()
                 .Background(xTheme.Colors.Black)
                 .Color(xTheme.Colors.White)

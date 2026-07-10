@@ -16,9 +16,22 @@ namespace XcyUI.Controls
             var dateTimeState = StateValueOf(dateTime, isReset: true);
             return Row(dateTimeState, date =>
             {
-                Input(date.ToString("yyyy-MM-dd")).Weight(1).SingleLine();
+                Input(date.ToString("yyyy-MM-dd"))
+                    .Weight(1)
+                    .SingleLine()
+                    .ReadOnly()
+                    .Focusable(false)
+                    .AccessibilityHidden();
                 Icon(SvgRes.Calendar).IconSize(20);
-            }).PrimaryInput().Space(5).Width(200).Popover(visibleState, ()=>
+            }).PrimaryInput().Space(5).Width(200)
+            .AccessibilityRole(XAccessibilityRole.DatePicker)
+            .AccessibilityName("日期选择器")
+            .AccessibilityValue(dateTimeState.Value.ToString("yyyy-MM-dd"))
+            .AccessibilityExpanded(visibleState.Value)
+            .AccessibilityMergeDescendants()
+            .Bind(dateTimeState, (builder, date) => builder.AccessibilityValue(date.ToString("yyyy-MM-dd")))
+            .Bind(visibleState, (builder, visible) => builder.AccessibilityExpanded(visible))
+            .Popover(visibleState, ()=>
             {
                 DateTimePicker(dateTime, date =>
                 {
@@ -45,6 +58,7 @@ namespace XcyUI.Controls
                 {
                     Icon(SvgRes.DArrowLeft).Size(20)
                     .Margin(vertical: 10).Hand()
+                    .Bind(typeState, (builder, type) => builder.AccessibilityName(type == 1 ? "上十年" : "上一年"))
                     .Click(() =>
                     {
                         if(typeState.Value == 1)
@@ -61,7 +75,9 @@ namespace XcyUI.Controls
                     // 选择天的时候
                     if (typeState.Value == 0)
                     {
-                        Icon(SvgRes.ArrowLeft).Size(20).Hand().Click(() =>
+                        Icon(SvgRes.ArrowLeft).Size(20).Hand()
+                        .AccessibilityName("上个月")
+                        .Click(() =>
                         {
                             currentDateTimeState.Value = currentDateTimeState.Value.AddMonths(-1);
                         }, defaultEffect: false);
@@ -107,13 +123,17 @@ namespace XcyUI.Controls
                     // 选择天的时候
                     if (typeState.Value == 0)
                     {
-                        Icon(SvgRes.ArrowRight).Size(20).Hand().Click(() =>
+                        Icon(SvgRes.ArrowRight).Size(20).Hand()
+                        .AccessibilityName("下个月")
+                        .Click(() =>
                         {
                             currentDateTimeState.Value = currentDateTimeState.Value.AddMonths(1);
                         }, defaultEffect: false);
                     }
 
-                    Icon(SvgRes.DArrowRight).Size(20).Hand().Click(() =>
+                    Icon(SvgRes.DArrowRight).Size(20).Hand()
+                    .Bind(typeState, (builder, type) => builder.AccessibilityName(type == 1 ? "下十年" : "下一年"))
+                    .Click(() =>
                     {
                         if (typeState.Value == 1)
                         {
@@ -258,6 +278,10 @@ namespace XcyUI.Controls
                                 .Also(builder =>
                                 {
                                     var selectDate = selectedDateTimeState.Value;
+                                    builder
+                                    .AccessibilityName(day.ToString("yyyy-MM-dd"))
+                                    .AccessibilitySelected(selectDate == day)
+                                    .AccessibilityEnabled(!isOutDate);
                                     if (selectDate == day)
                                     {
                                         builder

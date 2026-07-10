@@ -1,4 +1,5 @@
-﻿using XcyUI.navigation;
+using System.Collections.Generic;
+using XcyUI.navigation;
 using XcyUI.views;
 
 namespace XcyUI.models
@@ -13,6 +14,8 @@ namespace XcyUI.models
         void Layout(int width, int height);
         void Focus(bool foucus);
         void Open(XPage page);
+        XAccessibilityNode GetAccessibilityTree();
+        List<XAccessibilityIssue> AuditAccessibility();
         void Dispose();
     }
 }

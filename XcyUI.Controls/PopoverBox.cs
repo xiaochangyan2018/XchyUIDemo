@@ -31,6 +31,8 @@ namespace XcyUI.Controls
             {
                 visibleState.Value = false;
             })
+            .AccessibilityExpanded(visibleState.Value)
+            .Bind(visibleState, (b, visible) => b.AccessibilityExpanded(visible))
             .BubbleEvent(XEventType.Click)
             .Click(() =>
             {

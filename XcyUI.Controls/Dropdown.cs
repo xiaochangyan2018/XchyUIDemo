@@ -14,6 +14,7 @@ namespace XcyUI.Controls
     {
         public static XViewBuilder MultiDropdown(List<(object, string)> items, XState<List<object>> selectItemsState = null, XFunction<(object, string)> onSelected = null, int popCardWidth = 200)
         {
+            selectItemsState = selectItemsState ?? StateValueOf(new List<object>(), true);
             var selectItems = selectItemsState.Value ?? new List<object>();
             var selectValue = items.Where(n => selectItems.Contains(n.Item1)).Select(n => n.Item2);
             var selectStr = string.Join(",", selectValue);
@@ -44,10 +45,18 @@ namespace XcyUI.Controls
             .PrimaryInput()
             .Width(200)
             .Space(10)
+            .AccessibilityRole(XAccessibilityRole.ComboBox)
+            .AccessibilityName("多选下拉")
+            .AccessibilityValue(selectState.Value)
+            .AccessibilityExpanded(popupVisible.Value)
+            .AccessibilityMergeDescendants()
+            .Bind(selectState, (builder, select) => builder.AccessibilityValue(select))
+            .Bind(popupVisible, (builder, visible) => builder.AccessibilityExpanded(visible))
             .Popover(popupVisible, () =>
             {
                 Column(() =>
                 {
+                    var index = 1;
                     foreach (var item in items)
                     {
                         var isSelected = (selectItemsState.Value ?? new List<object>()).Contains(item.Item1);
@@ -68,9 +77,13 @@ namespace XcyUI.Controls
                             var select = string.Join(",", value);
                             selectState.Value = select;
                             selectItemsState.Value = list;
-                        }).Margin(10);
+                        })
+                        .AccessibilitySetPosition(index, items.Count)
+                        .Margin(10);
+                        index++;
                     }
                 })
+                .AccessibilityRole(XAccessibilityRole.ListBox)
                 .Scrollable()
                 .HorizontalAlignment(XHorizontalAlignment.Left)
                 .Margin(5).Size(WRAP).MinWidth(150).MaxHeight(500).Width(popCardWidth);
@@ -85,6 +98,7 @@ namespace XcyUI.Controls
 
         public static XViewBuilder Dropdown(List<(object, string)> items, XState<object> selectItemState = null, XFunction<(object, string)> onSelected = null, int popCardWidth = 200)
         {
+            selectItemState = selectItemState ?? StateValueOf<object>(null, true);
             var selectValue = items.FirstOrDefault(n => n.Item1.Equals(selectItemState?.Value)).Item2;
             var selectState = StateValueOf(selectValue?.ToString()??"", true);
             var popupVisible = StateValueOf(false);
@@ -112,10 +126,18 @@ namespace XcyUI.Controls
             .PrimaryInput()
             .Width(200)
             .Space(10)
+            .AccessibilityRole(XAccessibilityRole.ComboBox)
+            .AccessibilityName("下拉选择")
+            .AccessibilityValue(selectState.Value)
+            .AccessibilityExpanded(popupVisible.Value)
+            .AccessibilityMergeDescendants()
+            .Bind(selectState, (builder, select) => builder.AccessibilityValue(select))
+            .Bind(popupVisible, (builder, visible) => builder.AccessibilityExpanded(visible))
             .Popover(popupVisible, () =>
             {
                 Column(() =>
                 {
+                    var index = 1;
                     foreach (var item in items)
                     {
                         Row(() =>
@@ -126,6 +148,10 @@ namespace XcyUI.Controls
                             Text(item.Item2);
                         })
                         .Width(FILL).Space(10).Padding(10)
+                        .AccessibilityRole(XAccessibilityRole.ListItem)
+                        .AccessibilityName(item.Item2)
+                        .AccessibilitySelected(item.Item1.Equals(selectItemState?.Value))
+                        .AccessibilitySetPosition(index, items.Count)
                         .Click(()=>
                         {
                             var selectItem = (item.Item1, item.Item2);
@@ -134,8 +160,10 @@ namespace XcyUI.Controls
                             selectItemState.Value = item.Item1;
                             popupVisible.Value = false;
                         });
+                        index++;
                     }
                 })
+                .AccessibilityRole(XAccessibilityRole.ListBox)
                 .Scrollable()
                 .HorizontalAlignment(XHorizontalAlignment.Left)
                 .Margin(5).Size(WRAP).MinWidth(150).MaxHeight(500).Width(popCardWidth);

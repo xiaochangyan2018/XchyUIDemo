@@ -122,10 +122,13 @@ namespace XcyUI.widgets
         public XSpanBuilder Click(XFunction click)
         {
             var builder = new XViewBuilder(textView);
+            textView.EventParams.Focusable = true;
+            textView.Accessibility.Role = XAccessibilityRole.Link;
+            textView.Accessibility.Name = textView.Text.Substring(span.StartIndex, span.EndIndex - span.StartIndex + 1);
             builder
             .OnHover((b, info) =>
             {
-                var spanChars = textView.GetChars(span.StartIndex, span.EndIndex);
+                var spanChars = textView.GetChars(span.StartIndex, span.EndIndex) ?? new List<XChar>();
                 var isIn = spanChars.Count(n => n.RenderRect.Contain(info.Point)) > 0;
                 RenderImp.SetCursor(isIn ? XCursorType.Hand : XCursorType.Arrow);
             })
@@ -135,9 +138,10 @@ namespace XcyUI.widgets
             });
             textView.EventParams.EventOrCreate(XEventType.Click).AddFunction($"span_{span.StartIndex}_{span.EndIndex}", (b, info) =>
             {
-                var spanChars = textView.GetChars(span.StartIndex, span.EndIndex);
+                var spanChars = textView.GetChars(span.StartIndex, span.EndIndex) ?? new List<XChar>();
                 var isIn = spanChars.Count(n => n.RenderRect.Contain(info.Point)) > 0;
-                if (isIn)
+                var isKeyboard = info.KeyValue == XKeyValue.Enter || info.KeyValue == XKeyValue.Space;
+                if (isIn || isKeyboard)
                 {
                     click.Invoke();
                 }

@@ -38,6 +38,11 @@ namespace XcyUI.Controls
             .Space(10)
             .HoverCursor(XCursorType.Hand)
             .Color(xTheme.Colors.White)
+            .AccessibilityRole(XAccessibilityRole.CheckBox)
+            .AccessibilityName(text)
+            .AccessibilityChecked(selectState.Value)
+            .AccessibilityMergeDescendants()
+            .Bind(selectState, (builder, select) => builder.AccessibilityChecked(select))
             .Click(() =>
             {
                 selectState.Value = !selectState.Value;

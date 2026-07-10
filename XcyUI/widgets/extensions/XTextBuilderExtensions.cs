@@ -90,13 +90,25 @@ namespace XcyUI.widgets.extensions
 
         public static XViewBuilder ReadOnly(this XViewBuilder builder, bool readOnly = true)
         {
-            builder.AsView<XInput>()?.Also(n => n.ReadOnly = readOnly);
+            builder.AsView<XInput>()?.Also(n =>
+            {
+                n.ReadOnly = readOnly;
+                n.Accessibility.IsReadOnly = readOnly;
+            });
             return builder;
         }
 
         public static XViewBuilder Lines(this XViewBuilder builder, int lines)
         {
-            builder.AsView<XText>()?.Also(n => n.Lines = lines);
+            builder.AsView<XText>()?.Also(n =>
+            {
+                n.Lines = lines;
+                if (n is XInput)
+                {
+                    n.Accessibility.Role = lines == 1 ? XAccessibilityRole.TextBox : XAccessibilityRole.TextArea;
+                    n.Accessibility.IsMultiline = lines != 1;
+                }
+            });
             return builder;
         }
 
@@ -108,7 +120,11 @@ namespace XcyUI.widgets.extensions
 
         public static XViewBuilder Hint(this XViewBuilder builder, string text)
         {
-            builder.AsView<XInput>()?.Also(n => n.Hint = text);
+            builder.AsView<XInput>()?.Also(n =>
+            {
+                n.Hint = text;
+                n.Accessibility.Hint = text;
+            });
             return builder;
         }
 
@@ -123,6 +139,7 @@ namespace XcyUI.widgets.extensions
             builder.AsView<XInput>()?.Also(n =>
             {
                 n.SetPasswordChar(key);
+                n.Accessibility.IsPassword = key != null;
             });
             return builder;
         }

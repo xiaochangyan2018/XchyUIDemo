@@ -90,7 +90,24 @@ namespace XcyUI.navigation
             }
         }
 
-        public XGroup RouteView => ReversalPages().Pop().RootView as XGroup;
+        public XGroup RouteView
+        {
+            get
+            {
+                var pages = ReversalPages();
+                return pages != null && pages.Count > 0 ? pages.Pop().RootView as XGroup : null;
+            }
+        }
+
+        public XAccessibilityNode GetAccessibilityTree()
+        {
+            return RouteView == null ? null : XAccessibility.BuildTree(RouteView);
+        }
+
+        public List<XAccessibilityIssue> AuditAccessibility()
+        {
+            return RouteView == null ? new List<XAccessibilityIssue>() : XAccessibility.Audit(RouteView);
+        }
 
         public void Open(XPage page)
         {

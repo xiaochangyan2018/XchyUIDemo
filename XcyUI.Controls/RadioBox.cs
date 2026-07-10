@@ -46,7 +46,12 @@ namespace XcyUI.Controls
                     }
                 }).Size(WRAP);
                 Text(text);
-            }).Space(10).HoverCursor(XCursorType.Hand);
+            }).Space(10)
+            .HoverCursor(XCursorType.Hand)
+            .AccessibilityRole(XAccessibilityRole.RadioButton)
+            .AccessibilityName(text)
+            .AccessibilityChecked(select)
+            .AccessibilityMergeDescendants();
         }
     }
 }

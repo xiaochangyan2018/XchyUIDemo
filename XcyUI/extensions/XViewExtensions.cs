@@ -281,6 +281,7 @@ namespace XcyUI.expansions
         {
             view.LayoutParams.Reset();
             view.Style.Reset();
+            view.Accessibility.Reset();
             view.EventParams.Event(XEventType.Dispose)?.Invoke(view, null);
             view.EventParams.Clear();
             if(view is XGroup)

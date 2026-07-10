@@ -40,6 +40,7 @@ namespace XcyUI.views
         {
             view.Parent = this;
             Childs.Add(view);
+            XAccessibility.NotifyStructureChanged(this);
         }
 
         public void InsertView(int index,XView view)
@@ -48,6 +49,7 @@ namespace XcyUI.views
             {
                 view.Parent = this;
                 Childs.Insert(index, view);
+                XAccessibility.NotifyStructureChanged(this);
             }
         }
 
@@ -58,6 +60,7 @@ namespace XcyUI.views
             childs.Remove(view);
             Childs = childs;
             UpdateDrawViews();
+            XAccessibility.NotifyStructureChanged(this);
         }
 
         public override void Translation(int x, int y)
