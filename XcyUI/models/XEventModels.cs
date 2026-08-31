@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using XcyUI.events;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.models
 {
@@ -58,6 +56,9 @@ namespace XcyUI.models
         public const int Delete = 46;
         public const int Backspace = 259;
         public const int Enter = 257;
+        public const int Tab = 258;
+        public const int Escape = 256;
+
     }
 
     public enum KeyModify
@@ -68,66 +69,52 @@ namespace XcyUI.models
         Super = 0x0008
     }
 
-    public class XEventInfo
+    public struct XEventInfo
     {
-        public int X { get; set; }
-        public int Y { get; set; }
-        public bool IsLeft { get; set; }
-        public XEventType EventType { get; set; }
-        public int ClickKey { get; set; }
-        public int WheelSize { get; set; }
-        public bool IsVerticalWheel { get; set; }
-        public char KeyChar { get; set; }
-        public int KeyValue { get; set; }
-        public KeyModify KeyModify { get; set; }
-        public object Value { get; set; }
+        public static readonly XEventInfo Empty;
+        public int X;
+        public int Y;
+        public bool IsLeft;
+        public XEventType EventType;
+        public int ClickKey;
+        public int WheelSize;
+        public bool IsVerticalWheel;
+        public char KeyChar;
+        public int KeyValue;
+        public KeyModify KeyModify;
+        public object Value;
+        public bool isAbandoned;
 
         public XPoint Point => new XPoint(X, Y);
 
         public XEventInfo Copy(XEventType eventType)
         {
-            var action = new XEventInfo();
-            action.X = X;
-            action.Y = Y;
-            action.IsLeft = IsLeft;
+            var action = this;
             action.EventType = eventType;
-            action.WheelSize = WheelSize;
             return action;
         }
     }
 
     public class XEventFunction
     {
-        public XEventFunction()
-        {
-            _functions = new Dictionary<string, XFunction<XView, XEventInfo>>();
-        }
-        public XEventFunction(string key, XFunction<XView, XEventInfo> function)
-        {
-            _functions = new Dictionary<string, XFunction<XView, XEventInfo>>();
-            AddFunction(key, function);
-        }
-        public float RowScollerSize { get; set; }
-        public float ColumnScollerSize { get; set; }
-        public bool IsVerticalScoll { get; set; }
-        public XPoint DownPoint { get; set; }
-        public object Value { get; set; }
-        public bool IsMust { get; set; }
-        public bool IsIntercept { get; set; }
-        private Dictionary<string, XFunction<XView, XEventInfo>> _functions;
+        public object Value;
+        public bool IsMust;
+        public bool IsIntercept;
+        private bool _dirty = true;
+        private Dictionary<string, Action<XView, XEventInfo>> _functions = new();
+        private List<Action<XView, XEventInfo>> _cache = new();
         public int FunctionsCount => _functions.Count;
-        public void AddFunction(string key, XFunction<XView, XEventInfo> function)
+        public void AddFunction(string key, Action<XView, XEventInfo> function)
         {
-            _functions.Remove(key);
-            _functions.Add(key, function);
+            _functions[key] = function;
+            _dirty = true;
         }
-        public XFunction<XView,XEventInfo> RemoveFunction(string key)
+        public Action<XView,XEventInfo> RemoveFunction(string key)
         {
-            XFunction<XView, XEventInfo> function = null;
-            if (_functions.ContainsKey(key))
+            if (_functions.TryGetValue(key, out Action<XView, XEventInfo> function))
             {
-                function = _functions[key];
                 _functions.Remove(key);
+                _dirty = true;
             }
             return function;
         }
@@ -135,18 +122,27 @@ namespace XcyUI.models
         public void Clear()
         {
             _functions?.Clear();
+            _dirty = true;
             if (Value is IDisposable)
             {
                 ((IDisposable)Value).Dispose();
             }
             Value = null;
         }
+        private void RebuildCache()
+        {
+            if (_dirty)
+            {
+                _cache.Clear();
+                _cache.AddRange(_functions.Values);
+                _dirty = false;
+            }
+        }
 
         public void Invoke(XView view, XEventInfo info)
         {
-            var list = new List<XFunction<XView, XEventInfo>>();
-            list.AddRange(_functions.Values);
-            foreach (var function in list)
+            RebuildCache();
+            foreach (var function in _cache)
             {
                 function?.Invoke(view, info);
             }
@@ -154,9 +150,9 @@ namespace XcyUI.models
 
         public void Invoke(XView view,string key, XEventInfo info)
         {
-            if (_functions.ContainsKey(key))
+            if (_functions.TryGetValue(key,out Action<XView, XEventInfo> function))
             {
-                _functions[key].Invoke(view, info);
+                function.Invoke(view, info);
             }
         }
     }

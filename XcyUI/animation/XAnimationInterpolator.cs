@@ -1,5 +1,4 @@
 ﻿using System;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.animation
 {
@@ -8,7 +7,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 简单的缓动下落
         /// </summary>
-        public static XFunctionResult<float> Bounce = (input) =>
+        public static Func<float, float> Bounce = (input) =>
         {
             const float n1 = 7.5625f;
             const float d1 = 2.75f;
@@ -33,7 +32,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 减速运动
         /// </summary>
-        public static XFunctionResult<float> Decelerate = (input) =>
+        public static Func<float, float> Decelerate = (input) =>
         {
             return 1.0f - (1.0f - input) * (1.0f - input);
         };
@@ -41,14 +40,14 @@ namespace XcyUI.animation
         /// <summary>
         /// 匀速运动
         /// </summary>
-        public static XFunctionResult<float> Uniform = (input) =>
+        public static Func<float, float> Uniform = (input) =>
         {
             return input;
         };
         /// <summary>
         /// 加速运动
         /// </summary>
-        public static XFunctionResult<float> Accelerate = (input) =>
+        public static Func<float, float> Accelerate = (input) =>
         {
             return input * input;
         };
@@ -56,7 +55,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 加速再减速
         /// </summary>
-        public static XFunctionResult<float> AccelerateDecelerate = (input) =>
+        public static Func<float, float> AccelerateDecelerate = (input) =>
         {
             return (float)(1 - Math.Cos(input * Math.PI)) / 2f;
         };
@@ -64,7 +63,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 减速再加速
         /// </summary>
-        public static XFunctionResult<float> DecelerateAccelerate = (input) =>
+        public static Func<float, float> DecelerateAccelerate = (input) =>
         {
             return (float)Math.Sin(input * Math.PI / 2);
         };
@@ -72,7 +71,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 预紧 / 先回后加速
         /// </summary>
-        public static XFunctionResult<float> Anticipate = (input) =>
+        public static Func<float, float> Anticipate = (input) =>
         {
             var tension = 2;
             return tension * input * input * input - input * input;
@@ -81,7 +80,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 预紧回弹 / 先回后超调
         /// </summary>
-        public static XFunctionResult<float> AnticipateOvershoot = (input) =>
+        public static Func<float, float> AnticipateOvershoot = (input) =>
         {
             var tension = 2;
             if (input < 0.5f)
@@ -94,7 +93,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 回弹 / 超调回弹
         /// </summary>
-        public static XFunctionResult<float> OverShoot = (input) =>
+        public static Func<float, float> OverShoot = (input) =>
         {
             var tension = 2;
             return (float)(input - tension * Math.Sin(input * Math.PI) * Math.Pow(2, -10 * input));
@@ -103,7 +102,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 指数加速
         /// </summary>
-        public static XFunctionResult<float> ExponentialAccelerate = (input) =>
+        public static Func<float, float> ExponentialAccelerate = (input) =>
         {
             return input == 0 ? 0 : (float)Math.Pow(2, 10 * (input - 1));
         };
@@ -111,7 +110,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 指数减速
         /// </summary>
-        public static XFunctionResult<float> ExponentialDecelerate = (input) =>
+        public static Func<float, float> ExponentialDecelerate = (input) =>
         {
             return input == 1 ? 1 : 1 - (float)Math.Pow(2, -10 * input);
         };
@@ -119,7 +118,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 正弦加速
         /// </summary>
-        public static XFunctionResult<float> SineAccelerate = (input) =>
+        public static Func<float, float> SineAccelerate = (input) =>
         {
             return (float)(1 - Math.Cos(input * Math.PI / 2));
         };
@@ -127,7 +126,7 @@ namespace XcyUI.animation
         /// <summary>
         /// 正弦减速
         /// </summary>
-        public static XFunctionResult<float> SineDecelerate = (input) =>
+        public static Func<float, float> SineDecelerate = (input) =>
         {
             return (float)Math.Sin(input * Math.PI / 2);
         };

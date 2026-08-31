@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using XcyUI.expansions;
 using XcyUI.models;
+using XcyUI.navigation;
 using XcyUI.utils;
 using XcyUI.views;
 using XcyUI.widgets;
@@ -17,18 +19,27 @@ namespace XcyUI.events
         public static XView HoverView { get; private set; }
         internal static List<XView> PreHoverViews = new List<XView>();
         //获取焦点的view
-        public static XView FocusView { get; private set; }
+        public static XView FocusView { get; internal set; }
 
         public static int X { get; private set; }
         public static int Y { get; private set; }
+        public static XPoint DownPoint;
+        public static XPoint Point => new XPoint(X, Y);
+        public static bool EnableTabindex { get; set; } = true;
         public static void ClearTargetView()
         {
             TargetView = null;
         }
+        /// <summary>
+        /// 清除焦点view
+        /// </summary>
         public static void ClearFocusView()
         {
             FocusView = null;
         }
+        /// <summary>
+        /// 清除目标view，悬浮view，焦点view
+        /// </summary>
         public static void Clear()
         {
             TargetView = null;
@@ -37,11 +48,17 @@ namespace XcyUI.events
         }
         private static LinkedList<XView> views = new LinkedList<XView>();
 
+        /// <summary>
+        /// 添加鼠标所在位置的有监听相关事件的view
+        /// </summary>
+        /// <param name="views">当前view的集合</param>
+        /// <param name="view">当前遍历的view</param>
+        /// <param name="info">事件信息</param>
         private static void AddEventViews(LinkedList<XView> views, XView view, XEventInfo info)
         {
             var rect = view.RenderRect;
             rect.Scale(-1);
-            if (view.LayoutParams.Visible == XVisibleType.Visible && rect.Contain(info.Point))
+            if (view.LayoutParams.Visible == XVisibleType.Visible && rect.Contain(info.Point) && view.EventParams.Enable)
             {
                 view.EventParams?.Event(XEventType.DispatchEvent)?.Invoke(view, info);
                 views.AddLast(view);
@@ -52,9 +69,9 @@ namespace XcyUI.events
                 if (view is XGroup && view.ChildCount() > 0)
                 {
                     var viewGroup = (XGroup)view;
-                    foreach (var item in viewGroup.DrawViews)
+                    for (int i = 0; i < viewGroup.DrawViews.Count; i++)
                     {
-                        if (item != null) AddEventViews(views, item, info);
+                        AddEventViews(views, viewGroup.DrawViews[i], info);
                     }
                     if (viewGroup.Scroller != null)
                     {
@@ -74,7 +91,18 @@ namespace XcyUI.events
         {
             X = info.X;
             Y = info.Y;
-            DoDispatch(root, info);
+            if (info.EventType == XEventType.KeyPress && root.Parent == null)
+            {
+                TabIndexHandler.Handler(root as XGroup, info);
+            }
+            else
+            {
+                if (info.EventType == XEventType.Down)
+                {
+                    TabIndexHandler.Clear();
+                }
+                DoDispatch(root, info);
+            }
         }
 
         private static void DoDispatch(XView root, XEventInfo info)
@@ -98,11 +126,12 @@ namespace XcyUI.events
             // 查找可以响应事件的view
             views.Clear();
             AddEventViews(views, root, info);
-
             var list = new List<XView>();
             foreach (var item in PreHoverViews)
             {
-                if (!item.RenderRect.Contain(info.Point))
+                var rect = item.RenderRect;
+                var isMusit = item.EventParams.Event(XEventType.Hover)?.IsMust ?? false;
+                if (item != HoverView && !(isMusit && rect.Contain(info.Point)))
                 {
                     var leaveEventInfo = info.Copy(XEventType.Leave);
                     DoEvent(item, leaveEventInfo, true);
@@ -119,14 +148,11 @@ namespace XcyUI.events
                 var eventFunction = view.EventParams?.Event(info.EventType);
                 if (view.EventParams?.Enable == true && eventFunction != null && firstHandlerView == null)
                 {
-                    if(firstHandlerView == null && HoverView != view && info.EventType == XEventType.Hover)
-                    {
-                        HandlerLeave(view, info);
-                    }
                     HandleEvent(view, info);
                     if (firstHandlerView == null)
                     {
                         firstHandlerView = view;
+                        break;
                     }
                 }
                 node = node.Previous;
@@ -139,27 +165,6 @@ namespace XcyUI.events
             }
         }
 
-        private static void HandlerLeave(XView firstHandlerView,XEventInfo info)
-        {
-            var lastView = views.Last?.Value;
-            // 处理leave
-            if (info.EventType == XEventType.Hover)
-            {
-                var rect = HoverView?.RenderRect ?? new XRect();
-                rect.Scale(-1);
-                if ((HoverView != null && !rect.Contain(info.Point)) || (firstHandlerView != null && HoverView != null && HoverView != firstHandlerView && HoverView.EventParams?.Event(XEventType.Hover)?.IsMust == false))
-                {
-                    var leaveEventInfo = info.Copy(XEventType.Leave);
-                    DoEvent(HoverView, leaveEventInfo, true);
-                }
-                else if(HoverView!=null)
-                {
-                    PreHoverViews.Add(HoverView);
-                }
-                HoverView = firstHandlerView;
-            }
-        }
-
         private static bool IsInputEvent(XEventType type)
         {
             return type == XEventType.KeyDown || type == XEventType.KeyPress;
@@ -167,9 +172,19 @@ namespace XcyUI.events
 
         private static void HandleEvent(XView view, XEventInfo info)
         {
+            if (info.EventType == XEventType.Hover)
+            {
+                if (PreHoverViews.IndexOf(view) < 0)
+                {
+                    PreHoverViews.Add(view);
+                }
+            }
             DoEvent(view, info, true);
             switch (info.EventType)
             {
+                case XEventType.Hover:
+                    HoverView = view;
+                    break;
                 case XEventType.Up:
 
                     if (HoverView != null && !HoverView.RenderRect.Contain(info.Point))
@@ -184,15 +199,16 @@ namespace XcyUI.events
                     TargetView = null;
                     break;
                 case XEventType.Down:
+                    DownPoint = info.Point;
                     TargetView = view;
-                    if (view.EventParams.Focusable && view != FocusView)
+                    if (view != FocusView && view.EventParams.Focusable)
                     {
-                        DoEvent(view, info.Copy(XEventType.Focused),true);
                         if (FocusView != null)
                         {
                             DoEvent(FocusView, info.Copy(XEventType.LossFocused), true);
                             FocusView.DrawCache.IsRefreshCache = true;
                         }
+                        DoEvent(view, info.Copy(XEventType.Focused), true);
                         FocusView = view;
                     }
                     break;
@@ -243,13 +259,13 @@ namespace XcyUI.events
             {
                 return;
             }
-            view.OnEvent(info);
             var mEvent = view.EventParams?.Event(info.EventType);
             if (mEvent != null)
             {
-                XWidget.SetCurrentView(view);
+                XCompose.SetCurrentView(view);
                 mEvent.Invoke(view, info);
             }
+            view.OnEvent(info);
             if (isPop && (mEvent == null || !mEvent.IsIntercept))
             {
                 PopEvent(view.Parent, info);

@@ -10,28 +10,31 @@ namespace XcyUI.views
 {
     public class XGroup: XView
     {
-        internal List<XView> Childs { get; private set; }
-        public XScroller Scroller { get; set; }
-        public int Space { get; set; }
-        protected List<XView> visibleChilds = new List<XView>();
-        protected List<XView> drawViews;
-        internal List<XView> DrawViews { get => drawViews; }
+        protected List<XView> _childs;
+        public XScroller Scroller;
+        public int Space;
+        protected List<XView> _layoutChilds = new();
+        protected List<XView> _drawViews = new();
+        protected List<XView> _retryMeasureChilds = new();
         protected int ChildRectWidth;
         protected int ChildRectHeight;
+
+        public List<XView> Childs => _childs ??= new();
+        internal List<XView> DrawViews => _drawViews;
         public XSize ChildSize => new XSize(ChildRectWidth, ChildRectHeight);
-        public XGroup()
-        {
-            Childs = new List<XView>();
-        }        
+        
 
         protected void FillVisibleViews()
         {
-            visibleChilds.Clear();
-            foreach (var view in Childs)
+            _layoutChilds.Clear();
+            if (_childs!= null)
             {
-                if (view != null && view.LayoutParams.Visible != XVisibleType.Gone)
+                foreach (var view in _childs)
                 {
-                    visibleChilds.Add(view);
+                    if (view != null && view.LayoutParams.Visible != XVisibleType.Gone)
+                    {
+                        _layoutChilds.Add(view);
+                    }
                 }
             }
         }
@@ -54,21 +57,22 @@ namespace XcyUI.views
         public void RemoveView(XView view)
         {
             view.Dispose();
-            var childs = new List<XView>(Childs);
-            childs.Remove(view);
-            Childs = childs;
+            _childs?.Remove(view);
             UpdateDrawViews();
         }
 
         public override void Translation(int x, int y)
         {
             base.Translation(x, y);
-            Childs?.ForEach(n => n.Translation(x, y));
+            ScolledChilds(x, y);
         }
 
         public virtual void ScolledChilds(int x, int y)
         {
-            Childs?.ForEach(n => n.Translation(x, y));
+            foreach (var child in _layoutChilds)
+            {
+                child.Translation(x, y);
+            }
         }
 
         internal virtual void ScolledEnd(bool isVertical)
@@ -77,46 +81,27 @@ namespace XcyUI.views
         }
 
 
-        public virtual void OnScolled(bool isVertical, int scolledSize)
+        public virtual void OnScolled(bool isVertical, int scolledSize, bool isScollerBar = false)
         {
             if (scolledSize == 0) return;
-            Scroller?.OnScolled(this, isVertical, scolledSize);
+            Scroller?.OnScolled(this, isVertical, scolledSize, isScollerBar);
         }
 
         public override void Measure()
         {
-            if (!IsMeasured) return;
             FillVisibleViews();
-            OnMeasure();
-            if (Scroller?.EnableScrolled == true)
-            {
-                UpdateScollerSize();
-            }
-            
-            measureHashCode = LayoutParams.MeasureHashCode();
-            EventParams.Event(XEventType.MeasureEnd)?.Invoke(this, null);
+            base.Measure();
         }
 
         protected override void OnMeasure()
         {
-            base.OnMeasure();
-            EventParams.Event(XEventType.MeasureStart)?.Invoke(this, null);
-            this.MeasureSize();
-            if (Childs.Count == 0) return;
-
-            if (LayoutParams.IsWrapWidth)
-            {
-                //Width = this.ParentWidth();
-            }
-
-            if (LayoutParams.IsWrapHeight)
-            {
-                //Height = this.ParentHeight();
-            }
-
-            this.MeasureMaxOrMin();
-
+            if (_layoutChilds.Count == 0) return;
+            ChildRectHeight = ChildRectWidth = 0;
             MeasureChilds();
+            if (Scroller?.EnableScrolled == true)
+            {
+                UpdateScollerSize();
+            }
         }
 
         protected virtual void MeasureWrapSize()
@@ -146,12 +131,28 @@ namespace XcyUI.views
             base.Layout();
             UpdateDrawViews();
             Scroller?.Layout(this);
-            //Style.IsClipContent = ChildRectHeight > Height || ChildRectWidth > Width;
         }
 
         public virtual void UpdateDrawViews()
         {
-            drawViews = Childs.Where(n => n.LayoutParams.Visible == XVisibleType.Visible).OrderBy(n => n.LayoutParams.ZIndex).ToList();
+            if (_childs == null) return;
+            _drawViews.Clear();
+            foreach (var child in _childs)
+            {
+                if (child.LayoutParams.Visible == XVisibleType.Visible)
+                {
+                    var index = _drawViews.Count;
+                    for (int i = 0; i < _drawViews.Count; i++)
+                    {
+                        if (_drawViews[i].LayoutParams.ZIndex > child.LayoutParams.ZIndex)
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+                    _drawViews.Insert(index, child);
+                }
+            }
         }
 
         public override void Draw()
@@ -162,22 +163,13 @@ namespace XcyUI.views
 
         protected override void DrawContent()
         {
-            if (drawViews?.Count > 0)
-            {
-                drawViews.ForEach(n => n.Draw());
-            }
-        }
-
-        public override void Invalidate()
-        {
-            RenderImp.Invalidate(this);
+            _drawViews.ForEach(n => n.Draw());
         }
 
         public override void Dispose()
         {
-            Childs.ForEach(n => n.Dispose());
+            _childs?.ForEach(n => n.Dispose());
             base.Dispose();
-            //Childs.Clear();
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using SkiaSharp;
 using System;
+using System.Drawing;
+using System.Net.NetworkInformation;
 using XcyUI.models;
 using XcyUI.theme;
 using XcyUI.utils;
@@ -8,78 +10,101 @@ namespace XcyUI.SkiaSharp
 {
     public class PaintCache
     {
+        // 缓存
         private readonly static LinkedHashMap<int, SKPaint> Cache = new LinkedHashMap<int, SKPaint>();
         private readonly static LinkedHashMap<int, SKImageFilter> ImageFilter = new LinkedHashMap<int, SKImageFilter>();
-        private readonly static LinkedHashMap<int, SKPathEffect> pathEffect = new LinkedHashMap<int, SKPathEffect>();       
+        private readonly static LinkedHashMap<int, SKPathEffect> pathEffect = new LinkedHashMap<int, SKPathEffect>();
 
-        public static SKPaint GetBackground(XBrush background)
+        private readonly static SKPaint gradientPaint = new SKPaint();
+        private readonly static SKPaint gradientBorderPaint = new SKPaint();
+        private readonly static SKPaint shadowPaint = new SKPaint();
+
+        public static SKPaint GetBackgoundPaint(XBrush background)
         {
-            SKPaint paint;
-            var key = background.GetHashCode();
-            if (!Cache.ContainsKey(key))
+            var key = background.StartColor.GetHashCode();
+            lock (Cache)
             {
-                paint = new SKPaint();
-                paint.IsAntialias = true;
-                paint.Color = background.StartColor.ToSKColor();
-                Cache[key] = paint;
+                if (!Cache.Map.TryGetValue(key, out SKPaint paint))
+                {
+                    paint = new SKPaint();
+                    paint.IsAntialias = true;
+                    paint.Color = background.StartColor.ToSKColor();
+                    Cache[key] = paint;
+
+                }
+                return paint;
             }
-            paint = Cache[key];
-            paint.PathEffect = null;
-            paint.Shader = null;
-            paint.ImageFilter = null;
-            paint.ColorFilter = null;
-            paint.IsStroke = false;
-            paint.StrokeWidth = 0;
-            return paint;
         }
 
-        public static SKPaint GetBackground(XRect rect, XStyle style, bool isCache)
+        public static SKPaint GetBorderPaint(XBrush background, float size)
         {
-            var paint = GetBackground(style.Background);
-            if (!style.Background.EndColor.IsEmpty)
+            var key = (background.StartColor.Value, background.EndColor.Value, size).GetHashCode();
+            lock (Cache)
             {
-                paint.Shader = DrawConverter.ToShader(rect, style.Background);
+                if (!Cache.Map.TryGetValue(key, out SKPaint paint))
+                {
+                    paint = new SKPaint();
+                    paint.IsAntialias = true;
+                    paint.Color = background.StartColor.ToSKColor();
+                    paint.IsStroke = true;
+                    paint.StrokeCap = SKStrokeCap.Round;
+                    paint.StrokeWidth = size;
+                    Cache[key] = paint;
+                }
+                return paint;
             }
-            if (!style.Shadow.IsEmpty && !isCache)
-            {
-                paint.ImageFilter = GetImageFilter(style.Shadow);
-            }
-            return paint;
         }
 
-        public static SKPaint GetBorder(XRect rect, XBorder border)
+        public static SKPaint GetGradientPaint(XRect rect, XBrush backgound)
         {
-            var paint = GetBackground(border.Color);
-            paint.IsStroke = true;
-            paint.StrokeWidth = border.Size.All;
-            if (!border.Color.EndColor.IsEmpty)
-            {
-                paint.Shader = DrawConverter.ToShader(rect, border.Color);
-            }
-            return paint;
+            gradientPaint.IsAntialias = true;
+            gradientPaint.Color = backgound.StartColor.ToSKColor();
+            gradientPaint.Shader = rect.ToShader(backgound);
+            gradientPaint.BlendMode = SKBlendMode.SrcOver;
+            return gradientPaint;
+        }
+
+        public static SKPaint GetGradientBorderPaint(XRect rect, XBrush backgound, float size)
+        {
+            gradientBorderPaint.IsAntialias = true;
+            gradientBorderPaint.Color = backgound.StartColor.ToSKColor();
+            gradientBorderPaint.IsStroke = true;
+            gradientBorderPaint.StrokeWidth = size;
+            gradientBorderPaint.Shader = rect.ToShader(backgound);
+            gradientBorderPaint.PathEffect = null;
+            return gradientBorderPaint;
+        }
+
+        public static SKPaint GetShadowPaint(XBrush backgound, XShadow shadow)
+        {
+            shadowPaint.IsAntialias = true;
+            shadowPaint.Color = backgound.StartColor.ToSKColor();
+            shadowPaint.ImageFilter = GetImageFilter(shadow);
+            return shadowPaint;
         }
 
         public static SKImageFilter GetImageFilter(XShadow shadow)
         {
-            SKImageFilter imageFilter;
             var key = shadow.ShadowHashCode();
-            if (!ImageFilter.ContainsKey(key))
+            if (!ImageFilter.Map.TryGetValue(key, out SKImageFilter imageFilter))
             {
-                imageFilter = DrawConverter.ToImageFilter(shadow);
+                imageFilter = shadow.ToImageFilter();
                 ImageFilter[key] = imageFilter;
             }
-            return ImageFilter[key];
+            return imageFilter;
         }
+
         private static XRect ShadowRect(XShadow shadow, XRect rect)
         {
             var tempRect = rect;
             var dx = Math.Abs(shadow.Dx);
             var dy = Math.Abs(shadow.Dy);
             tempRect.Scale(dx, dy, shadow.Blur + dx, shadow.Blur + dy);
-            tempRect.Scale(shadow.Blur*2);
+            tempRect.Scale(shadow.Blur * 2);
             return tempRect;
         }
-        internal static void DrawShadowRect(SKCanvas canvas,XShadow shadow, XRect rect,SKPath path)
+
+        internal static void DrawShadowRect(SKCanvas canvas, XShadow shadow, XRect rect, SKPath path)
         {
             var tempRect = ShadowRect(shadow, rect);
             var bitmap = GetBitmapForShdow(shadow, rect, path);
@@ -88,7 +113,7 @@ namespace XcyUI.SkiaSharp
         internal static SKBitmap GetBitmapForShdow(XShadow shadow, XRect rect, SKPath path)
         {
             var key = $"{shadow.ShadowHashCode()}_{rect.Width}_{rect.Height}";
-            if (!XThemeManager.Images.ContainsKey(key))
+            if (!XTheme.Images.Map.TryGetValue(key, out object image))
             {
                 var tempRect = ShadowRect(shadow, rect);
                 var bitmap = new SKBitmap(tempRect.Width, tempRect.Height);
@@ -101,20 +126,21 @@ namespace XcyUI.SkiaSharp
                     offscreenCanvas.Translate(-tempRect.X, -tempRect.Y);
                     offscreenCanvas.DrawPath(path, paint);
                 }
-                XThemeManager.Images[key] = bitmap;
+                image = bitmap;
+                XTheme.Images[key] = bitmap;
             }
-            return XThemeManager.Images[key] as SKBitmap;
+            return image as SKBitmap;
         }
 
         public static SKPathEffect GetPathEffect(XDashType type)
         {
             var key = type.GetHashCode();
-            if (!pathEffect.ContainsKey(key))
+            if (!pathEffect.Map.TryGetValue(key, out SKPathEffect effect))
             {
-                var effect = type.ToPathEffect();
+                effect = type.ToPathEffect();
                 pathEffect[key] = effect;
             }
-            return pathEffect[key];
+            return effect;
         }
     }
 }

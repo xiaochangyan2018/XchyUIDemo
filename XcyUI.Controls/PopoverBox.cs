@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using XcyUI.animation;
 using XcyUI.expansions;
 using XcyUI.models;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
-using static XcyUI.widgets.XWidget;
+using static XcyUI.widgets.XCompose;
 using static XcyUI.Controls.PopoverUtils;
+using XcyUI.theme;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder Popover(this XViewBuilder builder,
+        public static XModify Popover(this XModify builder,
             XState<bool> visibleState = null,
-            XFunction content = null,
+            Action content = null,
             bool enablePopover = true,
             bool isAlignLeft = false,
             bool isSameWidth = false,
@@ -39,7 +37,7 @@ namespace XcyUI.Controls
             }, defaultEffect: defaultEffect, "Popover_click");
             return builder;
         }
-        public static void PopContentView(XState<bool> visible, XFunction content, XState<XRect> rectState, bool enablePopover = true, bool isAlignLeft = false, bool isSameWidth = false)
+        public static void PopContentView(XState<bool> visible, Action content, XState<XRect> rectState, bool enablePopover = true, bool isAlignLeft = false, bool isSameWidth = false)
         {
             PopupCard(visible, builder =>
             {
@@ -47,7 +45,9 @@ namespace XcyUI.Controls
                 var isOut = StateValueOf(false);
                 var animateValue = AnimateFloatOf(visisbleState, animate =>
                 {
-                    animate.Interpolator = XAnimationInterpolator.Accelerate;
+                    animate.SetValues(0, 0.8f, 1f);
+                    animate.SetKeyFrameTimes(250, 300);
+                    animate.SetInterpolators(XAnimationInterpolator.Accelerate,XAnimationInterpolator.Bounce);
                 });
                 var point = StateValueOf(new XPoint(), true);
                 PopoverCard(content, rectState, enablePopover, isAlignLeft, isSameWidth)
@@ -73,7 +73,7 @@ namespace XcyUI.Controls
                 })
                 .Bind(animateValue, (b, value) =>
                 {
-                    b.Scale(1, value, point.Value);
+                    b.Scale(value, point.Value);
                 });
             },
             disableOutClick: false,
@@ -86,7 +86,7 @@ namespace XcyUI.Controls
             });
         }
 
-        public static XViewBuilder PopoverCard(XFunction content, XState<XRect> rectState, bool enablePopover = true, bool isAlignLeft = false, bool isSameWidth = false)
+        public static XModify PopoverCard(Action content, XState<XRect> rectState, bool enablePopover = true, bool isAlignLeft = false, bool isSameWidth = false)
         {
             var padding = 16.AsPx();
             var builder = Box(content)
@@ -94,7 +94,7 @@ namespace XcyUI.Controls
                 .Width(isSameWidth ? (enablePopover ? ((rectState.Value.Width + padding * 2).AsDp()) : rectState.Value.Width.AsDp()) : WRAP)
                 .Card()
                 .Padding(enablePopover ? 16 : 0)
-                .Radius(xTheme.Radius.Low)
+                .Radius(XTheme.Radius.Low)
                 .Alignment(XAlignment.LeftTop)
                 .MeasureEnd(b =>
                 {

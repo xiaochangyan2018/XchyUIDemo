@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using XcyUI.animation;
 using XcyUI.expansions;
 using XcyUI.models;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.utils
 {
@@ -41,7 +39,7 @@ namespace XcyUI.utils
             _draw?.DrawRect(rect, style, null);
         }
 
-        public static void Draw(XRect rect, XStyle style, XDrawCache cache, XFunction onDraw)
+        public static void Draw(XRect rect, XStyle style, XDrawCache cache, Action onDraw)
         {
             if (cache.EnableCache)
             {
@@ -53,7 +51,7 @@ namespace XcyUI.utils
             }
         }
 
-        public static void DrawRect(XRect rect, XStyle style, XFunction onDraw)
+        public static void DrawRect(XRect rect, XStyle style, Action onDraw)
         {
             _draw?.DrawRect(rect, style, onDraw);
         }
@@ -82,9 +80,9 @@ namespace XcyUI.utils
             }
         }
 
-        public static XBitmap GetBitmap(string base64)
+        public static XBitmap GetBitmap(string base64, bool hasBuffer = false)
         {
-            return _draw?.GetBitmap(base64);
+            return _draw?.GetBitmap(base64, hasBuffer);
         }
 
         public static void DrawImage(byte[] images, XRect rect, XBrush color, XScaleType scaleType)
@@ -109,57 +107,42 @@ namespace XcyUI.utils
             {
                 view.DrawCache.IsRefreshCache = true;
             }
-            if (isInvalidate || lockInvalidate || XAnimation.IsStart()) return;
-            isInvalidate = true;
-            Post(() =>
+            if (view == null)
             {
-                if (view == null)
-                {
-                    _draw?.RefreshCache(true);
-                }
-                _window?.Invalidate();
-                _draw?.RefreshCache(false);
-            });
-            isInvalidate = false;
+                _draw?.RefreshCache(true);
+            }
+            _window?.Invalidate();
+            _draw?.RefreshCache(false);
         }
 
         public static void Invalidate()
         {
-            if (isInvalidate || lockInvalidate || _draw == null)
-            {
-                return;
-            }
-            isInvalidate = true;
             Post(() =>
             {
                 _draw?.RefreshCache(true);
                 _window?.Invalidate();
                 _draw?.RefreshCache(false);
             });
-            isInvalidate = false;
-        }
-
-        public static void InvalidateAll()
-        {
-            if (isInvalidate || lockInvalidate) return;
-            isInvalidate = true;
-            _window?.InvalidateAll();
-            isInvalidate = false;
         }
 
         public static void ChangedImmPosition(XPoint point)
         {
-            _window?.ChangedImmPosition(point);
+            _window?.UpdateImmPosition(point);
         }
 
-        public static void Post(XFunction function)
+        public static void Post(Action function)
         {
-            _window?.ExecuteOnMainThread(function);
+            _window?.Post(function);
         }
 
-        public static void PostToQueue(XFunction function)
+        public static void PostToQueue(Action function)
         {
-            _window?.ExecuteOnLopper(function);
+            _window?.PostToQueue(function);
+        }
+
+        public static void PostToRender(Action action)
+        {
+            _window?.PostToRender(action);
         }
 
         public static void SetCursor(XAlignment align)
@@ -203,7 +186,7 @@ namespace XcyUI.utils
             _draw?.DrawArc(rect, style, startAngle, sweepAngle, userCenter);
         }
 
-        public static void DrawPath(XRect rect, XStyle style, bool isCache, XFunction content)
+        public static void DrawPath(XRect rect, XStyle style, bool isCache, Action content)
         {
             _draw?.DrawPath(rect, style, isCache, content);
         }
@@ -228,14 +211,9 @@ namespace XcyUI.utils
             _draw?.ArcTo(x, y, radius);
         }
 
-        public static void AddRect(XRect rect)
+        public static void AddRect(XRect rect, XColor[] colors, XGradientDirection direction)
         {
-            _draw?.AddRect(rect);
-        }
-
-        public static void AddGradient(XRect rect, XColor[] colors, XGradientDirection direction)
-        {
-            _draw?.AddGradient(rect, colors, direction);
+            _draw?.AddRect(rect, colors, direction);
         }
     }
 }

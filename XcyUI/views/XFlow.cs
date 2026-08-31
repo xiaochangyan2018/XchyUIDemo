@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Linq;
-using XcyUI.expansions;
+using XcyUI.Core.Utils;
 using XcyUI.models;
 
 namespace XcyUI.views
 {
     public class XFlow: XGroup
     {
-        public int Cells { get; set; }
-        private XRect _childRect;
+        public int Cells;
         protected override void MeasureChilds()
         {
             var contentRect = ContentRect;
@@ -21,14 +20,9 @@ namespace XcyUI.views
             {
                 childWidth = (contentWidth - (Space * (Cells - 1))) / Cells;
             }
-            for (int i = 0; i < Childs.Count; i++)
+            for (int i = 0; i < _layoutChilds.Count; i++)
             {
-                var child = Childs[i];
-                if (child.LayoutParams.Visible == XVisibleType.Gone)
-                {
-                    continue;
-                }
-
+                var child = _layoutChilds[i];
                 if (childWidth > 0)
                 {
                     var colspan = child.LayoutParams.Colspan == 0 ? 1 : child.LayoutParams.Colspan;
@@ -44,18 +38,15 @@ namespace XcyUI.views
                 {
                     left = 0;
                     top += rowHeight + Space;
+                    ChildRectHeight += rowHeight+ Space;
                     rowHeight = 0;
                 }
-                child.X = left;
-                child.Y = top;
-                child.Layout();
                 rowHeight = Math.Max(rowHeight, child.Height);
                 left += child.Width + Space;
+                ChildRectWidth = Math.Max(0, left);
             }
-
-            ChildRectHeight = Childs.Max(n => n.RenderRect.Bottom);
-            ChildRectWidth = Childs.Max(n => n.RenderRect.Right);
-            _childRect = new XRect(ChildRectWidth, ChildRectHeight);
+            ChildRectWidth -= Space;
+            ChildRectHeight += rowHeight;
             MeasureWrapSize();
         }
 
@@ -63,26 +54,22 @@ namespace XcyUI.views
         {
             var scollerHeight = Scroller?.ScrollerHeight ?? 0;
             var scollerWidth = Scroller?.ScrollerWidth ?? 0;
-            var prePoint = _childRect.Point;
-            _childRect.Move(ContentRect, XAlignment.LeftTop);
-            var point = _childRect.Point;
-            var x = point.X - prePoint.X + scollerWidth;
-            var y = point.Y - prePoint.Y + scollerHeight;
-            Childs.ForEach(n =>
+            var contentRect = ContentRect;
+            var left = contentRect.X + scollerWidth;
+            var top = contentRect.Y + scollerHeight;
+            var rowHeight = 0;
+            foreach (var child in _layoutChilds)
             {
-                n.Translation(x, y);
-            });
-        }
-
-        public override void Translation(int x, int y)
-        {
-            X += x;
-            Y += y;
-            _childRect.Translation(x, y);
-            Childs.ForEach(n => n.Translation(x, y));
-            if (x > 0 || y > 0)
-            {
-                EventParams.Event(XEventType.LocationChanged)?.Invoke(this, null);
+                if (left + child.Width > contentRect.Right)
+                {
+                    left = contentRect.X + scollerWidth;
+                    top += rowHeight + Space;
+                    rowHeight = 0;
+                }
+                child.Location = new XPoint(left, top);
+                child.Layout();
+                rowHeight = Math.Max(rowHeight, child.Height);
+                left += child.Width + Space;
             }
         }
     }

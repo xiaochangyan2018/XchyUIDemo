@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using XcyUI.animation;
 using XcyUI.expansions;
@@ -11,7 +12,6 @@ namespace XcyUI.views
     {
         protected override void OnMeasure()
         {
-            this.MeasureSize();
             if (Datas.Count == 0)
             {
                 Items.Clear();
@@ -28,7 +28,7 @@ namespace XcyUI.views
 
             if (LayoutParams.IsWrapHeight)
             {
-                Height = this.ParentHeight();
+                Height = 5000;
                 if (Height < 0)
                 {
                     Height = int.MaxValue;
@@ -58,7 +58,7 @@ namespace XcyUI.views
             var size = Items.Count;
             Items.Clear();
             ChildRectWidth = 0;
-            int contentHeight = ContentRect.Height;
+            int contentHeight = ContentRect.Height;            
             var template = Templates[0];
             var scollerHeight = Math.Abs(Scroller.ScrollerHeight);
             var index = scollerHeight / (template.Height + Space);
@@ -67,7 +67,7 @@ namespace XcyUI.views
             {
                 var item = template.LayoutItem(this, i, top, 0);
                 if (item != null)
-                {                    
+                {
                     Items.Add(item);
                     var maxWidth = item.View.Childs.Max(a => a.Width);
                     ChildRectWidth = Math.Max(ChildRectWidth, maxWidth);
@@ -101,7 +101,7 @@ namespace XcyUI.views
                 var isGroup = true;
                 for (int i = 0; i < template.Datas.Count; i++)
                 {
-                    isLastIndex = a == Templates.Count - 1 && i == template.Datas.Count -1;
+                    isLastIndex = a == Templates.Count - 1 && i == template.Datas.Count - 1;
                     if (isGroup)
                     {
                         var groupIndex = i / XLazyTemplate.GroupItemCount;
@@ -146,6 +146,18 @@ namespace XcyUI.views
             }
         }
 
+        private readonly Stopwatch stopwatch = new Stopwatch();
+        protected override void OnScolledItems()
+        {
+            stopwatch.Restart();
+            isScolled = true;
+            LayoutItems();
+            Scroller.UpdateScollerSize(ContentRect, ChildSize);
+            Scroller.Layout(this);
+            OnLayout();
+            stopwatch.Stop();
+        }
+
         public override void ScolledChilds(int x, int y)
         {
             // 垂直滑动
@@ -163,11 +175,7 @@ namespace XcyUI.views
                     }
                 }
                 isScollForward = y < 0;
-                isScolled = true;
-                LayoutItems();
-                Scroller.UpdateScollerSize(ContentRect, ChildSize);
-                Scroller.Layout(this);
-                OnLayout();
+                RenderImp.PostToRender(OnScolledItems);
             }
             else if (x != 0)
             {
@@ -179,7 +187,7 @@ namespace XcyUI.views
                     {
                         if (!child.LayoutParams.Freeze)
                         {
-                             child.Translation(x, 0);
+                            child.Translation(x, 0);
                         }
                     }
                 }
@@ -188,11 +196,11 @@ namespace XcyUI.views
 
         public override void ScrolledToIndex(int templeateIndex, int index, bool isSmooth)
         {
-            index = Math.Min(index, Templates[templeateIndex].Datas.Count-1);
+            index = Math.Min(index, Templates[templeateIndex].Datas.Count - 1);
             index = Math.Max(index, 0);
             var oldScollerHeight = Scroller.ScrollerHeight;
             int y = 0;
-            for (int t = 0; t<= templeateIndex; t++)
+            for (int t = 0; t <= templeateIndex; t++)
             {
                 var template = Templates[t];
                 var endIndex = t == templeateIndex ? index : template.Datas.Count;
@@ -231,7 +239,7 @@ namespace XcyUI.views
                 var animate = XAnimation.AnimateFloatOf();
                 animate.Duration = 300;
                 var start = Scroller.ScrollerHeight;
-                animate.OnCallback = value =>
+                animate.OnCallback = (value, i) =>
                 {
                     OnScolled(true, (int)(start + size * value) - Scroller.ScrollerHeight);
                 };
@@ -241,7 +249,7 @@ namespace XcyUI.views
             {
                 OnScolled(true, size);
             }
-            
+
         }
 
         protected override void DeleteAnimate()

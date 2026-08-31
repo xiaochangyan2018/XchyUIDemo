@@ -2,16 +2,17 @@
 using XcyUI.animation;
 using XcyUI.expansions;
 using XcyUI.models;
+using XcyUI.theme;
 using XcyUI.utils;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.widgets.XWidget;
+using static XcyUI.widgets.XCompose;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder Tooltip(this XViewBuilder builder, string tips)
+        public static XModify Tooltip(this XModify builder, string tips)
         {
             var tipsState = StateValueOf(tips, true);
             builder.ToggleHover(isHover =>
@@ -31,8 +32,8 @@ namespace XcyUI.Controls
                 Text(textState.Value)
                 .Alignment(XAlignment.LeftTop)
                 .MiniCard()
-                .Background(xTheme.Colors.Black)
-                .Color(xTheme.Colors.White)
+                .Background(XTheme.Color.Black)
+                .Color(XTheme.Color.White)
                 .MeasureEnd(b =>
                 {
                     var width = b.View.RootView().Width;

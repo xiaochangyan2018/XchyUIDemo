@@ -1,60 +1,62 @@
-﻿using XcyUI.models;
+﻿using System;
+using XcyUI.models;
+using XcyUI.theme;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
-using static XcyUI.theme.XThemeManager;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder PrimaryButton(this XViewBuilder builder, XFunction function = null)
+        public static XModify PrimaryButton(this XModify builder, Action function = null)
         {
-            return builder.Padding(horizontal: Theme.Sizes.Space20, vertical: Theme.Sizes.Space12)
-                .Background(Theme.Colors.Primary)
+            return builder
+                .Tabindex(0)
+                .Padding(horizontal: XTheme.Size.Space20, vertical: XTheme.Size.Space12)
+                .Background(XTheme.Color.Primary)
                 .EnableEvent(true)
-                .Lines(1)
+                .SingleLineAll()
                 .TextAlignment(XAlignment.Center)
-                .Shadow(Theme.Shadows.PrimaryButton)
-                .ColorAll(Theme.Colors.White)
-                .ColorAll(Theme.Colors.White)
+                .Shadow(XTheme.Shadow.PrimaryButton)
+                .ColorAll(XTheme.Color.White)
                 .IconSizeAll(20)
-                .FontWeight(Theme.Weights.Button)
-                .Border(Theme.Colors.Primary, 0)
-                .Radius(Theme.Radius.Middle)
+                .FontWeight(XTheme.Weight.Middle)
+                .Border(XTheme.Color.Primary, 0)
+                .Radius(XTheme.Radius.Middle)
+                .HoverCursor(XCursorType.Arrow)
                 .Click(function);
         }
 
-        public static XViewBuilder SubButton(this XViewBuilder builder, XFunction function = null)
+        public static XModify SubButton(this XModify builder, Action function = null)
         {
             return builder.PrimaryButton(function)
                 .Shadow(new XShadow())
-                .ColorAll(Theme.Colors.RegularText)
+                .ColorAll(XTheme.Color.RegularText)
                 .IconSizeAll(20)
-                .Background(Theme.Colors.LightFill)
-                .Border(Theme.Colors.BaseBorder, Theme.Sizes.Border);
+                .Background(XTheme.Color.LightFill)
+                .Border(XTheme.Color.BaseBorder, XTheme.Size.Border);
         }
 
-        public static XViewBuilder DangerButton(this XViewBuilder builder, XFunction function = null)
+        public static XModify DangerButton(this XModify builder, Action function = null)
         {
             return builder.PrimaryButton(function)
-                .Background(Theme.Colors.Danger);
+                .Background(XTheme.Color.Danger);
         }
 
-        public static XViewBuilder DisableButton(this XViewBuilder builder)
+        public static XModify DisableButton(this XModify builder)
         {
             return builder.PrimaryButton()
                 .EnableEvent(false)
                 .Shadow(new XShadow())
-               .ColorAll(Theme.Colors.DisabledText)
+               .ColorAll(XTheme.Color.DisabledText)
                .Border(new XBorder())
-               .Background(Theme.Colors.LightFill);
+               .Background(XTheme.Color.LightFill);
         }
 
-        public static XViewBuilder Disable(this XViewBuilder builder)
+        public static XModify Disable(this XModify builder, bool isDisable = true)
         {
-            return builder.EnableEvent(false)
-               .Alpha(Theme.Colors.DisabledAlpha);
+            return builder.EnableEvent(!isDisable)
+               .Alpha(isDisable?XTheme.Color.DisabledAlpha: 1);
         }
     }
 }

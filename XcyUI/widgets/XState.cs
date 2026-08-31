@@ -1,14 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using XcyUI.utils;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.widgets
 {
     public class XState<T>
     {
         private T _value;
-        private LinkedList<XFunction<T>> observers = new LinkedList<XFunction<T>>();
-        private List<XFunction> disposeObservers = new List<XFunction>();
+        private LinkedList<Action<T>> observers = new LinkedList<Action<T>>();
+        private List<Action> disposeObservers = new List<Action>();
         private object _lock = new object();
         public XState() { }
         public XState(T defaultValue)
@@ -20,19 +20,33 @@ namespace XcyUI.widgets
         {
             _value = defaultValue;
         }
-
+        public void Refresh()
+        {
+            RenderImp.PostToQueue(() =>
+            {
+                NotifyChanged();
+            });
+        }
         public void Send(T value)
         {
             _value = value;
-            RenderImp.Post(() =>
+            RenderImp.PostToQueue(() =>
             {
-                _value = value;
                 NotifyChanged();
             });
         }
         internal void SetDefault(T value)
         {
             _value = value;
+        }
+
+        public void Post(T value)
+        {
+            if ((value == null && _value != null) || !value.Equals(_value))
+            {
+                _value = value;
+                RenderImp.PostToQueue(NotifyChanged);
+            }
         }
         public T Value
         {
@@ -52,14 +66,14 @@ namespace XcyUI.widgets
 
         private void NotifyChanged()
         {
-            var list = new List<XFunction<T>>(observers);
+            var list = new List<Action<T>>(observers);
             foreach (var item in list)
             {
                 item.Invoke(_value);
             }
         }
 
-        public void Add(XFunction<T> function)
+        public void Add(Action<T> function)
         {
             
             RenderImp.Post(() =>
@@ -71,7 +85,7 @@ namespace XcyUI.widgets
             });
         }
 
-        public void Remove(XFunction<T> function)
+        public void Remove(Action<T> function)
         {
             RenderImp.Post(() =>
             {
@@ -79,7 +93,7 @@ namespace XcyUI.widgets
             });
         }
 
-        public void AddDispose(XFunction function)
+        public void AddDispose(Action function)
         {
             RenderImp.Post(() =>
             {
@@ -90,6 +104,7 @@ namespace XcyUI.widgets
         public void Dispose()
         {
             disposeObservers.ForEach(n => n.Invoke());
+            //Clear();
             //observers = null;
             //_value = default;
         }
@@ -105,7 +120,7 @@ namespace XcyUI.widgets
         {
             lock (_lock)
             {
-                XFunction<U> observer = value =>
+                Action<U> observer = value =>
                 {
                     NotifyChanged();
                 };

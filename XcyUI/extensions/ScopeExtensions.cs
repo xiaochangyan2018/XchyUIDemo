@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.expansions
 {
@@ -19,7 +18,7 @@ namespace XcyUI.expansions
             return source;
         }
 
-        public static TSource TakeOf<TSource>(this TSource source, XFunctionResult<bool, TSource> action)
+        public static TSource TakeOf<TSource>(this TSource source, Func<TSource, bool> action)
         {
             return action(source)? source: default(TSource);
         }

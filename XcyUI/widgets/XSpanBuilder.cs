@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using XcyUI.expansions;
 using XcyUI.models;
-using XcyUI.theme;
 using XcyUI.utils;
 using XcyUI.views;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
+using XcyUI.theme;
 
 namespace XcyUI.widgets
 {
     public class XSpanBuilder
     {
         private XTextSpan span;
-        private XTheme Theme => XThemeManager.Theme;
         private XText textView;
         public XSpanBuilder(XText view, string text)
         {
@@ -88,40 +86,40 @@ namespace XcyUI.widgets
 
         public XSpanBuilder TextBody()
         {
-            return Color(Theme.Colors.PrimaryText).Size(Theme.Sizes.Body);
+            return Color(XTheme.Color.PrimaryText).Size(XTheme.Size.Body);
         }
 
         public XSpanBuilder TextCaption()
         {
-            return Color(Theme.Colors.PlaceholderText).Size(Theme.Sizes.Caption);
+            return Color(XTheme.Color.PlaceholderText).Size(XTheme.Size.Caption);
         }
 
         public XSpanBuilder H1()
         {
-            return Color(Theme.Colors.PrimaryText).Size(Theme.Sizes.H1).Weight(Theme.Weights.Large);
+            return Color(XTheme.Color.PrimaryText).Size(XTheme.Size.H1).Weight(XTheme.Weight.Large);
         }
 
         public XSpanBuilder H2()
         {
-            return Color(Theme.Colors.PrimaryText).Size(Theme.Sizes.H2).Weight(Theme.Weights.Large);
+            return Color(XTheme.Color.PrimaryText).Size(XTheme.Size.H2).Weight(XTheme.Weight.Large);
         }
 
         public XSpanBuilder H3()
         {
-            return Color(Theme.Colors.PrimaryText).Size(Theme.Sizes.H3).Weight(Theme.Weights.Large);
+            return Color(XTheme.Color.PrimaryText).Size(XTheme.Size.H3).Weight(XTheme.Weight.Large);
         }
 
         public XSpanBuilder SmallText()
         {
-            Color(Theme.Colors.SecondaryText).Size(Theme.Sizes.Small).Weight(Theme.Weights.Large);
+            Color(XTheme.Color.SecondaryText).Size(XTheme.Size.Small).Weight(XTheme.Weight.Large);
             return this;
         }
 
         
 
-        public XSpanBuilder Click(XFunction click)
+        public XSpanBuilder Click(Action click)
         {
-            var builder = new XViewBuilder(textView);
+            var builder = new XModify(textView);
             builder
             .OnHover((b, info) =>
             {

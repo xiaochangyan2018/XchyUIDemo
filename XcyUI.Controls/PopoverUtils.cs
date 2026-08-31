@@ -139,6 +139,10 @@ namespace XcyUI.Controls
                 destRect.X = marginX;
                 destRect.Y = marginY;
             }
+            if(destRect.X <=2)
+            {
+                destRect.X = 3;
+            }
             return destRect.Point;
         }
 

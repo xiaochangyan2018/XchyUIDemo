@@ -4,7 +4,6 @@ using System.Linq;
 using XcyUI.expansions;
 using XcyUI.models;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.templates
 {
@@ -21,16 +20,16 @@ namespace XcyUI.templates
             MeausreHeight = XLayoutParams.Wrap;
             MeausreWidth = XLayoutParams.Fill;
         }
-        internal static XLazyTemplate Create<T>(List<T> datas,int span,int cells, XFunction<XGroup, T> funtion)
+        internal static XLazyTemplate Create<T>(List<T> datas,int span,int cells, Action<XGroup, T, int> funtion)
         {
             var template = new XLazyGridTemplate();
             template.Span = span;
             template.Cells = cells;
             template.Datas.Clear();
             datas.ForEach(n => template.Datas.Add(n));
-            template.Content = (v, d) =>
+            template.Content = (v, d, index) =>
             {
-                funtion.Invoke(v, (T)d);
+                funtion.Invoke(v, (T)d, index);
             };
             template.Grouping();
             return template;

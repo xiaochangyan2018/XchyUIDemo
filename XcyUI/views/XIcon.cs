@@ -4,7 +4,7 @@ using XcyUI.utils;
 
 namespace XcyUI.views
 {
-    public class XIcon: XView
+    public class XIcon : XView
     {
         public XBrush Color { get; set; }
         public XScaleType ScaleType { get; set; }
@@ -26,9 +26,12 @@ namespace XcyUI.views
             contentRect.Y = 0;
             iconRect.Width = IconWidth > 0 ? IconWidth : ContentRect.Width;
             iconRect.Height = IconHeight > 0 ? IconHeight : ContentRect.Height;
-            if (LayoutParams.IsWrapWidth || LayoutParams.IsWrapHeight)
+            if (Width < 0)
             {
                 Width = iconRect.Width + LayoutParams.Padding.HorizontalSize;
+            }
+            if (Height < 0)
+            {
                 Height = iconRect.Height + LayoutParams.Padding.VerticalSize;
             }
             iconRect.Move(contentRect, XAlignment.Center);
@@ -48,7 +51,7 @@ namespace XcyUI.views
 
         protected override void DrawContent()
         {
-            if (XThemeManager.ImgResources.ContainsKey(ResId))
+            if (XTheme.ImgResources.ContainsKey(ResId))
             {
                 RenderImp.DrawImage(ResId, iconRect, Color, ScaleType);
             }

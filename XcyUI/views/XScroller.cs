@@ -20,10 +20,11 @@ namespace XcyUI.views
 
         private XPoint downPoint;
         private int maxScrollerHeight;
+        private XEventInfo _scolledEventInfo = new XEventInfo();
         public XScroller()
         {
-            Thickness = XThemeManager.Theme.Sizes.ScrollbarWidth.AsPx();
-            MinDepth = XThemeManager.Theme.Sizes.ScrollbarMinHeight.AsPx();
+            Thickness = XTheme.Size.ScrollbarWidth.AsPx();
+            MinDepth = XTheme.Size.ScrollbarMinHeight.AsPx();
             EnableScrolled = true;
         }
 
@@ -33,10 +34,10 @@ namespace XcyUI.views
             VerticalScollerBar = CreateScollerView(view);
             HorizontalScollerBar.LayoutParams.Height = Thickness;
             HorizontalScollerBar.Height = Thickness;
-            HorizontalScollerBar.LayoutParams.Margin = new XSpace(0, 0, 0, XThemeManager.Theme.Sizes.ScrollbarMargin.AsPx());
+            HorizontalScollerBar.LayoutParams.Margin = new XSpace(0, 0, 0, XTheme.Size.ScrollbarMargin.AsPx());
             VerticalScollerBar.LayoutParams.Width = Thickness;
             VerticalScollerBar.Width = Thickness;
-            VerticalScollerBar.LayoutParams.Margin = new XSpace(0, 0, XThemeManager.Theme.Sizes.ScrollbarMargin.AsPx(), 0);
+            VerticalScollerBar.LayoutParams.Margin = new XSpace(0, 0, XTheme.Size.ScrollbarMargin.AsPx(), 0);
         }
 
         public void UpdateScollerSize(XRect contentRect, XSize childSize)
@@ -90,7 +91,7 @@ namespace XcyUI.views
             view.Parent = parent;
             view.Style.Background = new XBrush()
             {
-                StartColor = XThemeManager.Theme.Colors.InfoLight2
+                StartColor = XTheme.Color.InfoLight2
             };
             view.Style.Radius = new XSpace(Thickness / 2);
             var defaultEventKey = "default_scoller";
@@ -105,10 +106,8 @@ namespace XcyUI.views
             downPoint = info.Point;
         }
 
-        private readonly Stopwatch stopwatch = new Stopwatch();
         private void OnMove(XView view, XEventInfo info)
         {
-            stopwatch.Restart();
             if (view == VerticalScollerBar)
             {
                 OnVerticalMove((XGroup)view.Parent, info);
@@ -117,8 +116,6 @@ namespace XcyUI.views
             {
                 OnHorizontalMove((XGroup)view.Parent, info);
             }
-            stopwatch.Stop();
-            Console.WriteLine($"VerticalScolled times:{stopwatch.ElapsedMilliseconds}");
         }
 
         private void OnVerticalMove(XGroup view, XEventInfo info)
@@ -128,7 +125,10 @@ namespace XcyUI.views
             var size = info.Point.Y - downPoint.Y;
             downPoint = info.Point;
             var wheelSize = size * ((float)childSize.Height - contentRect.Height) / (contentRect.Height - VerticalScollerBar.Height);
-            view.OnScolled(true, -(int)Math.Round(wheelSize));
+            var roundSize = -(int)Math.Round(wheelSize);
+            var scolledSize = GetVerticalScolledWheelSize(view, roundSize);
+            view.Invalidate();
+            view.OnScolled(true, scolledSize, true);
         }
 
         private void OnHorizontalMove(XGroup view, XEventInfo info)
@@ -138,20 +138,22 @@ namespace XcyUI.views
             var size = info.Point.X - downPoint.X;
             downPoint = info.Point;
             var wheelSize = size * ((float)childSize.Width - contentRect.Width) / (contentRect.Width - HorizontalScollerBar.Width);
-            view.OnScolled(false, -(int)Math.Round(wheelSize));
+            var roundSize = -(int)Math.Round(wheelSize);
+            var scolledSize = GetHorizontalScolledWheelSize(view, roundSize);
+            view.Invalidate();
+            view.OnScolled(false, scolledSize, true);
         }
 
-        public void OnScolled(XGroup view, bool isVertical, int scolledSize)
+        public void OnScolled(XGroup view, bool isVertical, int scolledSize,bool isScollerBar)
         {
             var isCanScolled = false;
-            RenderImp.lockInvalidate = true;
             if (isVertical)
             {
-                isCanScolled = VerticalScolled(view, scolledSize);
+                isCanScolled = VerticalScolled(view, scolledSize,isScollerBar);
             }
             else
             {
-                isCanScolled = HorizontalScolled(view, scolledSize);
+                isCanScolled = HorizontalScolled(view, scolledSize,isScollerBar);
             }
             if (!isCanScolled)
             {
@@ -163,24 +165,26 @@ namespace XcyUI.views
                 });
             }            
         }
-        
-        public bool VerticalScolled(XGroup view, int wheelSize)
+
+        public int GetVerticalScolledWheelSize(XGroup view, int wheelSize)
         {
-            
             var oldHeight = ScrollerHeight;
             ScrollerHeight += wheelSize;
             UpdateScollerSize(view.ContentRect, view.ChildSize);
             var size = ScrollerHeight - oldHeight;
             TranslationVerticalScoller(view, size);
+            return size;
+        }
+        
+        public bool VerticalScolled(XGroup view, int wheelSize, bool isScollerBar)
+        {
+            var size = isScollerBar ? wheelSize : GetVerticalScolledWheelSize(view, wheelSize);
             view.ScolledChilds(0, size);
             view.ScolledEnd(true);
-            view.EventParams.Event(XEventType.Scolled)?.Invoke(view, new XEventInfo()
-            {
-                X = 0,
-                Y = size,
-                Value = ScrollerHeight
-            });
-            RenderImp.lockInvalidate = false;
+            _scolledEventInfo.X = 0;
+            _scolledEventInfo.Y = size;
+            _scolledEventInfo.Value = ScrollerHeight;
+            view.EventParams.Event(XEventType.Scolled)?.Invoke(view, _scolledEventInfo);
             view.Invalidate();       
             return size != 0;
         }
@@ -192,21 +196,26 @@ namespace XcyUI.views
             VerticalScollerBar.Y = (int)y + renderRect.Y;
         }
 
-        public bool HorizontalScolled(XGroup view, int wheelSize)
+        public int GetHorizontalScolledWheelSize(XGroup view, int wheelSize)
         {
             var oldWidth = ScrollerWidth;
             ScrollerWidth += wheelSize;
             UpdateScollerSize(view.ContentRect, view.ChildSize);
             var size = ScrollerWidth - oldWidth;
             TranslationHorizontalScoller(view, size);
+            return size;
+        }
+
+        public bool HorizontalScolled(XGroup view, int wheelSize, bool isScollerBar)
+        {
+            var size = isScollerBar ? wheelSize : GetHorizontalScolledWheelSize(view, wheelSize);
+            RenderImp.lockInvalidate = true;
             view.ScolledChilds(size, 0);
             view.ScolledEnd(false);
-            view.EventParams.Event(XEventType.Scolled)?.Invoke(view, new XEventInfo()
-            {
-                X = size,
-                Y = 0,
-                Value = ScrollerWidth
-            });
+            _scolledEventInfo.X = size;
+            _scolledEventInfo.Y = 0;
+            _scolledEventInfo.Value = ScrollerWidth;
+            view.EventParams.Event(XEventType.Scolled)?.Invoke(view, _scolledEventInfo);
             RenderImp.lockInvalidate = false;
             view.Invalidate();
             return size != 0;

@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using XcyUI.animation;
+using XcyUI.expansions;
 using XcyUI.models;
 using XcyUI.templates;
 
 namespace XcyUI.views
 {
-    public abstract class XLazy: XGroup
+    public abstract class XLazy : XGroup
     {
         public List<XLazyTemplate> Templates { get; private set; }
         public List<XLazyItem> Items { get; private set; }
-        
+
         public bool IsFixedItem { get; set; }
         internal XLazyItem FirstVisibleItem { get; private set; }
         protected bool isScolled;
@@ -22,13 +24,17 @@ namespace XcyUI.views
         internal XAnimate Animate { get; private set; }
         internal XLazyAnimateInfo AnimateInfo { get; set; }
         internal int LayoutNum { get; set; }
-        
+
+        // 快速滑动的动画
+        protected XAnimate _smoothScolledAniate = XAnimation.AnimateFloatOf();
+
         public XLazy()
         {
             Items = new List<XLazyItem>();
             Templates = new List<XLazyTemplate>();
             Animate = XAnimation.AnimateFloatOf();
             AnimateInfo = new XLazyAnimateInfo();
+            initSmoothScolledAniate();
         }
 
         protected virtual void MeasureItems()
@@ -77,6 +83,22 @@ namespace XcyUI.views
             ChildRectWidth = Templates.Max(n => n.SumWidth);
         }
 
+
+        private void initSmoothScolledAniate()
+        {
+            _smoothScolledAniate.Duration = 20;
+            _smoothScolledAniate.Interpolator = XAnimationInterpolator.Uniform;
+            _smoothScolledAniate.OnCallback = (value, index) =>
+            {
+                OnScolledItems();
+            };
+        }
+
+        protected virtual void OnScolledItems()
+        {
+
+        }
+
         protected virtual void LayoutItems()
         {
             AnimateItems = null;
@@ -97,8 +119,9 @@ namespace XcyUI.views
             Childs.Clear();
             Childs.AddRange(views);
             UpdateDrawViews();
-            FirstVisibleItem = Items.FirstOrDefault();        
+            FirstVisibleItem = Items.FirstOrDefault();            
         }
+        
         protected abstract void LayoutFixedItems();
         protected abstract void LayoutDynamicItems();
 
@@ -114,7 +137,7 @@ namespace XcyUI.views
                 n.Y += contentY;
                 ((XGroup)n).Childs.ForEach(a =>
                 {
-                    a.Translation(contentX + (a.LayoutParams.Freeze? 0: Scroller.ScrollerWidth), contentY);
+                    a.Translation(contentX + (a.LayoutParams.Freeze ? 0 : Scroller.ScrollerWidth), contentY);
                 });
             });
             Templates.ForEach(n => n.IsNotifyChanged = false);
@@ -157,6 +180,15 @@ namespace XcyUI.views
 
         public abstract void ScrolledToIndex(int templeateIndex, int index, bool isSmooth);
 
+        public int Count()
+        {
+            var count = 0;
+            for (int i = 0; i < Templates.Count; i++)
+            {
+                count += Templates[i].Datas.Count;
+            }
+            return count;
+        }
         public List<object> Datas
         {
             get

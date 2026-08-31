@@ -46,7 +46,7 @@ namespace XcyUI.utils
                 if (firstAfaterItem != null)
                 {
                     index = lazy.Items.IndexOf(firstAfaterItem);
-                    var old = lazy.AnimateItems.FirstOrDefault(n => n.Data == firstAfaterItem.Data);
+                    var old = lazy.AnimateItems.FirstOrDefault(n => n.Data.Equals(firstAfaterItem.Data));
                     if (isLazyColumn)
                     {
                         start = old?.View?.Y ?? lazy.RenderRect.Bottom;
@@ -84,7 +84,7 @@ namespace XcyUI.utils
                     var scollerSize = isLazyColumn ? lazy.Scroller.ScrollerHeight : lazy.Scroller.ScrollerWidth;
                     if (scollerSize < 0)
                     {
-                        var old = lazy.AnimateItems.FirstOrDefault(n => n.Data == lazy.Items.Last().Data);
+                        var old = lazy.AnimateItems.FirstOrDefault(n => n.Data.Equals(lazy.Items.Last().Data));
                         if (isLazyColumn)
                         {
                             start = deleteItems.First().View.Y;
@@ -119,7 +119,7 @@ namespace XcyUI.utils
                 lazy.Childs.InsertRange(index, deleteItems.Select(n => n.View));
                 lazy.UpdateDrawViews();
                 lazy.RefreshParentCache();
-                lazy.Animate.OnCallback = value =>
+                lazy.Animate.OnCallback = (value,i) =>
                 {
                     deleteItems.ForEach(n => n.View.DrawCache.Alpha = 1 - value);
                     var nextPoint = (int)lazy.Animate.Value(value, start, end);
@@ -146,13 +146,7 @@ namespace XcyUI.utils
                 };
                 lazy.Animate.OnFinished = () =>
                 {
-                    lazy.Childs.Clear();
-                    foreach (var item in lazy.Items)
-                    {
-                        item.View.RefreshParentCache();
-                        lazy.Childs.Add(item.View);
-                    }
-                    lazy.UpdateDrawViews();
+                    lazy.Refresh();
                 };
                 lazy.Animate.Start();
                 lazy.Invalidate();
@@ -213,7 +207,7 @@ namespace XcyUI.utils
                 var afaterChilds = lazy.Childs.GetRange(index, lazy.Childs.Count - index);
                 lazy.UpdateDrawViews();
                 lazy.RefreshParentCache();
-                lazy.Animate.OnCallback = value =>
+                lazy.Animate.OnCallback = (value,i) =>
                 {
                     var nextPoint = (int)lazy.Animate.Value(value, start, end);
                     if (afaterChilds.Count > 0)
@@ -235,14 +229,7 @@ namespace XcyUI.utils
                 };
                 lazy.Animate.OnFinished = () =>
                 {
-                    var views = lazy.Items.Select(n => n.View);
-                    foreach (var item in views)
-                    {
-                        item.LayoutParams.ZIndex = 0;
-                    }
-                    lazy.Childs.Clear();
-                    lazy.Childs.AddRange(views);
-                    lazy.UpdateDrawViews();
+                    lazy.Refresh();
                 };
                 lazy.Animate.Start();
                 lazy.Invalidate();

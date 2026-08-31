@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using XcyUI.models;
 using XcyUI.utils;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.views
 {
@@ -203,6 +203,6 @@ namespace XcyUI.views
         public int StartIndex { get; set; }
         public int EndIndex { get; set; }
         public XFont Font { get; set; }
-        public XFunction<string> Function { get; set; }
+        public Action<string> Function { get; set; }
     }
 }

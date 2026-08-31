@@ -1,27 +1,27 @@
-﻿using XcyUI.widgets;
-using static XcyUI.theme.XThemeManager;
+﻿using XcyUI.theme;
+using XcyUI.widgets;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder Card(this XViewBuilder builder)
+        public static XModify Card(this XModify builder)
         {
-            builder.Padding(Theme.Sizes.Space16)
-                .Background(Theme.Colors.BlankFill)
-                .Border(Theme.Colors.BaseBorder, 1)
-                .Shadow(Theme.Shadows.Card)
-                .Radius(Theme.Radius.Large);
+            builder.Padding(XTheme.Size.Space16)
+                .Background(XTheme.Color.LightFill)
+                .Border(XTheme.Color.BaseBorder, 1)
+                .Shadow(XTheme.Shadow.Card)
+                .Radius(XTheme.Radius.Large);
             return builder;
         }
 
-        public static XViewBuilder MiniCard(this XViewBuilder builder)
+        public static XModify MiniCard(this XModify builder)
         {
-            builder.Padding(Theme.Sizes.Space10)
-                .Background(Theme.Colors.BlankFill)
-                .Border(Theme.Colors.BaseBorder, 1)
-                .Shadow(Theme.Shadows.MinCard)
-                .Radius(Theme.Radius.Low);
+            builder.Padding(XTheme.Size.Space10)
+                .Background(XTheme.Color.LightFill)
+                .Border(XTheme.Color.BaseBorder, 1)
+                .Shadow(XTheme.Shadow.MinCard)
+                .Radius(XTheme.Radius.Low);
             return builder;
         }
     }

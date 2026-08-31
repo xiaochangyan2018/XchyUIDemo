@@ -1,84 +1,80 @@
 ﻿using SkiaSharp;
 using System;
-using System.Diagnostics;
 using XcyUI.animation;
 using XcyUI.events;
 using XcyUI.models;
 using XcyUI.navigation;
 using XcyUI.theme;
 using XcyUI.utils;
-using XcyUI.views;
 
 namespace XcyUI.SkiaSharp
 {
+    /// <summary>
+    /// SkiaSharp渲染后端
+    /// </summary>
     public class SkiaRenderBackend : IRenderBackend
     {
         private SKSurface surface;
         private GRContext grContext;
         public SkiaDraw SkiaDraw { get; private set; }
-        public XNavigationPage Navigation { get; private set; }
+        
         public SKColor BackgoundColor { get; set; }
-        private bool isDrak = false;
-        //private SKFont skFont;
+        private XPage _page;
+        XPage IRenderBackend.Page { get => _page; set => _page = value; }
+
+        public bool _eanbleAnimate;
         public SkiaRenderBackend()
         {
             SkiaDraw = new SkiaDraw();
-            Navigation = new XNavigationPage();
             RenderImp.SetDraw(SkiaDraw);
-            isDrak = XTheme.DarkModeState.Value;
-            BackgoundColor = XThemeManager.Theme.Colors.Background.ToSKColor();
-            //skFont = new SKFont()
-            //{
-            //    Subpixel = true,
-            //    LinearMetrics = true,
-            //    Hinting = SKFontHinting.Full,
-            //    Edging = SKFontEdging.SubpixelAntialias,
-            //    Size = 40,
-            //    Typeface = SKTypeface.FromFamilyName("Microsoft YaHei", new SKFontStyle(500, 6, SKFontStyleSlant.Upright))
-            //};
+            BackgoundColor = XTheme.Color.Background.ToSKColor();
         }
-        public void ResetSurface(int width, int height, object paramsData)
+        public void ResetSurface(int width, int height)
         {
-            grContext?.Flush();
-            grContext?.PurgeUnusedResources(100);
-            //grContext?.ResetContext();
             surface?.Dispose();
             CreateSurface(width, height);
+            _page?.StartLayout(width, height);
         }
-        //GRGlGetProcedureAddressDelegate get;
         public void CreateSurface(int width, int height, object paramsData)
         {
-            Delegate del = (Delegate)paramsData;
-            GRGlGetProcedureAddressDelegate get = (GRGlGetProcedureAddressDelegate)Delegate.CreateDelegate(
-                typeof(GRGlGetProcedureAddressDelegate),
-                del.Target,    // 方法所属对象
-                del.Method     // 方法信息
-            );
-            var gl = GRGlInterface.Create(get);
-            grContext = GRContext.CreateGl(gl);
-
             if (grContext == null)
             {
-                Console.WriteLine("OpenGL 上下文无效");
+                Delegate del = (Delegate)paramsData;
+                GRGlGetProcedureAddressDelegate get = (GRGlGetProcedureAddressDelegate)Delegate.CreateDelegate(
+                    typeof(GRGlGetProcedureAddressDelegate),
+                    del.Target,
+                    del.Method
+                );
+                var gl = GRGlInterface.Create(get);
+                grContext = GRContext.CreateGl(gl);
+
+                if (grContext == null)
+                {
+                    Console.WriteLine("OpenGL 上下文无效");
+                }
             }
             CreateSurface(width, height);
+            DrawHelper.PreWarmSkia(surface);
         }
 
         private void CreateSurface(int width, int height)
         {
-            Navigation.WindowWidth = width;
-            Navigation.WindowHeight = height;
+            var framebufferInfo = new GRGlFramebufferInfo(0, SKColorType.Rgba8888.ToGlSizedFormat());
             surface = SKSurface.Create(
                 grContext,
                 new GRBackendRenderTarget(
                     width, height, 0, 8,
-                    new GRGlFramebufferInfo(0, SKColorType.Rgba8888.ToGlSizedFormat())
+                    framebufferInfo
                 ),
                 GRSurfaceOrigin.BottomLeft,
                 SKColorType.Rgba8888
             );
         }
 
+        public void SetBackgoundColor(XColor color)
+        {
+            BackgoundColor = color.ToSKColor();
+        }
         public void Render()
         {
             if (surface == null)
@@ -86,60 +82,28 @@ namespace XcyUI.SkiaSharp
                 return;
             }
             RenderImp.SetDraw(SkiaDraw);
-            if (XAnimation.IsStart())
+            if (XAnimation.IsStart() && !_eanbleAnimate)
             {
                 XAnimation.HandlerAnimationItems();
             }
             SkiaDraw.Surface = surface;
             SkiaDraw.Canvas = surface.Canvas;
-            if (isDrak != XTheme.DarkModeState.Value)
-            {
-                BackgoundColor = XThemeManager.Theme.Colors.Background.ToSKColor();
-                isDrak = XTheme.DarkModeState.Value;
-            }
             SkiaDraw.Canvas.Clear(BackgoundColor);
-            Navigation?.Draw();
-            SkiaDraw.Canvas.Flush();
-            grContext.PurgeUnusedResources(1000);
-        }
-
-        public void DispatchEvent(XView view, XEventInfo info)
-        {
-            RenderImp.SetDraw(SkiaDraw);
-            XEvent.Dispatch(view, info);
-        }
-
-        public void DispatchEvent(XEventInfo info)
-        {
-            RenderImp.SetDraw(SkiaDraw);
-            Navigation?.DispatchEvent(info);
-        }
-
-        public void Focus(bool focus)
-        {
-            XEvent.FocusChanged(focus);
-        }
-
-        public void Layout(int width, int height)
-        {
-            Navigation?.Layout(width, height);
-        }
-
-        public void Open(XPage page)
-        {
-            Navigation?.Open(page);
+            _page?.Draw();
+            surface.Flush();
+            grContext.PurgeUnusedResources(500);
         }
 
         public void Dispose()
         {
             if (grContext == null) return;
             XEvent.Clear();
-            Navigation.Dispose();
-            Navigation = null;
+            _page?.RootView?.Dispose();
+            _page = null;
             SkiaDraw.Canvas = null;
             surface?.Dispose();
-            grContext?.Dispose();
             surface = null;
+            grContext?.Dispose();
             grContext = null;
         }
     }

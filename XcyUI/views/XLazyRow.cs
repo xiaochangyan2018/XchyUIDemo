@@ -210,7 +210,7 @@ namespace XcyUI.views
                 var animate = XAnimation.AnimateFloatOf();
                 animate.Duration = 300;
                 var start = Scroller.ScrollerHeight;
-                animate.OnCallback = value =>
+                animate.OnCallback = (value,i) =>
                 {
                     OnScolled(false, (int)(start + size * value) - Scroller.ScrollerWidth);
                 };

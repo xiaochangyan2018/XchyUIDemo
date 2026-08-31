@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.utils
 {
@@ -10,7 +10,7 @@ namespace XcyUI.utils
         private readonly LinkedList<T> linked;
         public LinkedList<T> Keys { get => linked; }
         public int CacheNum { get; set; }
-        public XFunction<U> OnRemoved { get; set; }
+        public Action<U> OnRemoved { get; set; }
         public LinkedHashMap()
         {
             CacheNum = 1000;
@@ -35,6 +35,8 @@ namespace XcyUI.utils
         {
             return map.ContainsKey(key);
         }
+
+        public Dictionary<T, U> Map => map;
 
         public List<U> Values()
         {
@@ -74,13 +76,16 @@ namespace XcyUI.utils
         {
             get
             {
-                if (map.ContainsKey(key))
+                lock (this)
                 {
-                    linked.Remove(key);
-                    linked.AddLast(key);
-                    return map[key];
+                    if (map.ContainsKey(key))
+                    {
+                        linked.Remove(key);
+                        linked.AddLast(key);
+                        return map[key];
+                    }
+                    return default;
                 }
-                return default;
             }
             set
             {

@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using XcyUI.animation;
+using XcyUI.expansions;
 using XcyUI.models;
+using XcyUI.theme;
+using XcyUI.utils;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
-using static XcyUI.theme.XThemeManager;
-using static XcyUI.widgets.XWidget;
+using static XcyUI.widgets.XCompose;
 
 namespace XcyUI.Controls
 {
@@ -14,14 +14,14 @@ namespace XcyUI.Controls
     {
         public string Title { get; set; }
         public string Content { get; set; }
-        public XFunction Cancel { get; set; }
-        public XFunction Confirm { get; set; }
+        public Action Cancel { get; set; }
+        public Action Confirm { get; set; }
     }
     public static partial class Controls
     {
         private static XState<bool> visibleDialogState = new XState<bool>();
         private static DialogInfo dialogInfo = new DialogInfo();
-        public static void ShowDialog(string title, string content, XFunction confirm = null, XFunction cancel = null)
+        public static void ShowDialog(string title, string content, Action confirm = null, Action cancel = null)
         {
             dialogInfo = new DialogInfo() { Title = title, Content = content, Confirm = confirm, Cancel = cancel };
             visibleDialogState.Value = true;
@@ -30,11 +30,14 @@ namespace XcyUI.Controls
         {
             PopupCard(visibleDialogState, card =>
             {
+                card.OnMove((b, info) =>
+                {
+                    RenderImp.GetWindow().MoveWindow();
+                });
                 var visisbleState = StateValueOf(true);
                 var isOut = StateValueOf(false);
                 var animateValue = AnimateFloatOf(visisbleState, animate =>
                 {
-                    //animate.Duration = 1800;
                     animate.OnFinished = () =>
                     {
                         if (isOut.Value)
@@ -48,10 +51,10 @@ namespace XcyUI.Controls
                 {
                     Row(() =>
                     {
-                        Icon(SvgRes.WarnTriangleFilled).Size(34).Color(xTheme.Colors.Warning);
+                        Icon(SvgRes.WarnTriangleFilled).Size(34).Color(XTheme.Color.Warning);
                         Text(dialogInfo.Title).H2();
                         Spacer(1).Weight(1);
-                        Icon(SvgRes.Close).Size(48).IconSize(24).Radius(xTheme.Radius.Middle).Click(() =>
+                        Icon(SvgRes.Close).Size(48).IconSize(24).Radius(XTheme.Radius.Middle).Click(() =>
                         {
                             visisbleState.Value = true;
                         });
@@ -71,23 +74,29 @@ namespace XcyUI.Controls
                             visisbleState.Value = true;
                         });
                     }).Width(FILL).Space(15).HorizontalAlignment(XHorizontalAlignment.Right);
-                }).Size(WRAP).Space(10).MinWidth(400)
+                })
+                .InterceptEvent(XEventType.Move)
+                .Size(WRAP).Space(10).MinWidth(400)
                 .HorizontalAlignment(XHorizontalAlignment.Left)
                 .Card().Padding(20)
                 .Bind(animateValue, (builder, value) =>
                 {
                     value = isOut.Value ? (1 - value) : value;
                     builder.Scale(value).Alpha(value);
-                    card.Alpha(value);
+                    card.View.RootView().ChildElemnt(0)?.Also(n => n.SetBlurSigma((int)(value * 8)));
                 });
             },
-            alpha: 0.3f, key: key);
+            blurSigma: 8, key: key);
         }
 
-        public static void DialogFormView(XState<bool> visibleFormState, XFunction<XState<bool>> content, [CallerLineNumber] int key = 0)
+        public static void DialogFormView(XState<bool> visibleFormState, Action<XState<bool>> content, [CallerLineNumber] int key = 0)
         {
             PopupCard(visibleFormState, card =>
             {
+                card.OnMove((modify, info) =>
+                {
+                    RenderImp.GetWindow().MoveWindow();
+                });
                 var visisbleState = StateValueOf(true);
                 var isOut = StateValueOf(false);
                 var animateValue = AnimateFloatOf(visisbleState, animate =>
@@ -106,14 +115,16 @@ namespace XcyUI.Controls
                     content.Invoke(visisbleState);
                 }).Size(WRAP)
                 .Card()
+                .Padding(0)
                 .Bind(animateValue, (builder, value) =>
                 {
                     value = isOut.Value ? (1 - value) : value;
                     builder.Scale(value).Alpha(value);
-                    card.Alpha(value);
+                    card.View.RootView().ChildElemnt(0)?.Also(n => n.SetBlurSigma((int)(value * 8)));
+
                 });
             },
-            alpha: 0.5f, key: key);
+            blurSigma: 8, key: key);
         }
     }
 }

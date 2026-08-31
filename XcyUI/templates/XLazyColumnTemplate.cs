@@ -4,7 +4,6 @@ using System.Linq;
 using XcyUI.expansions;
 using XcyUI.models;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.templates
 {
@@ -17,15 +16,15 @@ namespace XcyUI.templates
             MeausreWidth = XLayoutParams.Fill;
             MeausreHeight = XLayoutParams.Wrap;
         }
-        internal static XLazyTemplate Create<T>(List<T> datas, XFunction<XGroup, T> funtion)
+        internal static XLazyTemplate Create<T>(List<T> datas, Action<XGroup, T,int> funtion)
         {
             var template = new XLazyColumnTemplate();
             template.Datas.Clear();           
             template.CacheSize.Clear();
             datas?.ForEach(n => template.Datas.Add(n));
-            template.Content = (v, d) =>
+            template.Content = (v, d, index) =>
             {
-                funtion.Invoke(v, (T)d);
+                funtion.Invoke(v, (T)d, index);
             };
             return template;
         }

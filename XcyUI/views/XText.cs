@@ -50,7 +50,7 @@ namespace XcyUI.views
             charItems = new List<XChar>();
             Font = new XFont();
             IsAutoSpace = true;
-            Style.IsClipContent = false;
+            Style.IsClip = false;
         }
 
         internal void AddSuffixCharItems(string suffix)
@@ -111,10 +111,10 @@ namespace XcyUI.views
 
             if (LayoutParams.IsWrapHeight)
             {
-                Height = Parent?.LayoutParams?.IsWrapHeight == true ? int.MaxValue : this.ParentHeight();
+                Height = Parent?.LayoutParams?.IsWrapHeight == true ? 5000 : this.ParentHeight();
             }
 
-            if (Lines > 0 && LayoutParams.Height < 0)
+            if (Lines > 0 && LayoutParams.IsWrapHeight)
             {
                 Height = font.LineHeight * Lines + LayoutParams.Padding.VerticalSize;
             }
@@ -126,10 +126,10 @@ namespace XcyUI.views
 
             if (LayoutParams.IsWrapWidth)
             {
-                Width = Parent?.LayoutParams?.IsWrapWidth == true ? int.MaxValue : this.ParentWidth();
+                Width = Parent?.LayoutParams?.IsWrapWidth == true ? 5000 : this.ParentWidth();
                 if(Width == 0)
                 {
-                    Width = int.MaxValue;
+                    Width = 5000;
                 }
             }
             this.MeasureMaxOrMin();
@@ -345,6 +345,7 @@ namespace XcyUI.views
 
         protected override void DrawContent()
         {
+
             foreach (var item in drawChars)
             {
                 RenderImp.DrawText(item.Value);

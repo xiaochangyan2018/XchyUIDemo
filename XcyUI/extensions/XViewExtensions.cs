@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using XcyUI.animation;
 using XcyUI.events;
@@ -7,7 +8,6 @@ using XcyUI.models;
 using XcyUI.theme;
 using XcyUI.utils;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.expansions
 {
@@ -16,22 +16,22 @@ namespace XcyUI.expansions
         private static CancellationTokenSource invalidateTask = null;
         public static int AsPx(this int value)
         {
-            return XThemeManager.Scale == 1? value: (int)(value * XThemeManager.Scale + 0.5f);
+            return XTheme.Scale == 1? value: (int)(value * XTheme.Scale + 0.5f);
         }
 
         public static int AsDp(this int value)
         {
-            return XThemeManager.Scale == 1 ? value : (int)(value / XThemeManager.Scale);
+            return XTheme.Scale == 1 ? value : (int)(value / XTheme.Scale);
         }
 
         public static float AsDp(this float value)
         {
-            return XThemeManager.Scale == 1 ? value : (int)(value / XThemeManager.Scale);
+            return XTheme.Scale == 1 ? value : (int)(value / XTheme.Scale);
         }
 
         public static float AsPx(this float value)
         {
-            return XThemeManager.Scale == 1 ? value : value * XThemeManager.Scale;
+            return XTheme.Scale == 1 ? value : value * XTheme.Scale;
         }
         public static XView RootView(this XView view)
         {
@@ -75,13 +75,13 @@ namespace XcyUI.expansions
             var param = view.LayoutParams;
             if (param.AspectRatio != 0)
             {
-                if (view.Width > 0 && view.Height <= 0)
-                {
-                    view.Height = (int)(view.Width * param.AspectRatio);
-                }
-                else if (view.Width <= 0 && view.Height > 0)
+                if (param.IsWrapWidth && view.Height > 0)
                 {
                     view.Width = (int)(view.Height * param.AspectRatio);
+                }
+                else if (param.IsWrapHeight && view.Width > 0)
+                {
+                    view.Height = (int)(view.Width * param.AspectRatio);
                 }
             }
         }
@@ -102,7 +102,12 @@ namespace XcyUI.expansions
 
         public static XView ChildElemnt(this XView view,int index)
         {
-            return view is XGroup ? ((XGroup)view).Childs[index] : null;
+            return view is XGroup ? ((XGroup)view).Childs.ElementAtOrDefault(index) : null;
+        }
+
+        public static int ChildIndex(this XView view, XView child)
+        {
+            return view is XGroup ? ((XGroup)view).Childs.IndexOf(child) : -1;
         }
 
         public static List<XView> ChildElemnts(this XView view, int start,int count)
@@ -138,8 +143,11 @@ namespace XcyUI.expansions
         {
             if (view.Parent is XGroup)
             {
-                ((XGroup)view.Parent).RemoveView(view);
-                ((XGroup)view.Parent).Invalidate();
+                RenderImp.PostToQueue(() =>
+                {
+                    ((XGroup)view.Parent).RemoveView(view);
+                    ((XGroup)view.Parent).Invalidate();
+                });
             }
         }
 
@@ -163,12 +171,12 @@ namespace XcyUI.expansions
             view.LayoutParams.Visible = visible ? XVisibleType.Visible : XVisibleType.InVisible;
         }
 
-        public static XFunction<XView,XEventInfo> RemoveEvent(this XView view, XEventType eventType, string key)
+        public static Action<XView,XEventInfo> RemoveEvent(this XView view, XEventType eventType, string key)
         {
             return view.EventParams.RemoveFunction(eventType, key);
         }
 
-        public static void AddEvent(this XView view, XEventType eventType, string key, XFunction function)
+        public static void AddEvent(this XView view, XEventType eventType, string key, Action function)
         {
             view.EventParams.EventOrCreate(eventType).AddFunction(key, (v, info) =>
             {
@@ -176,17 +184,17 @@ namespace XcyUI.expansions
             });
         }
 
-        public static void AddEvent(this XView view, XEventType eventType, XFunction<XView, XEventInfo> function)
+        public static void AddEvent(this XView view, XEventType eventType, Action<XView, XEventInfo> function)
         {
             view.EventParams.EventOrCreate(eventType).AddFunction(eventType.ToString(), function);
         }
 
-        public static void AddEvent(this XView view, XEventType eventType, string key, XFunction<XView, XEventInfo> function)
+        public static void AddEvent(this XView view, XEventType eventType, string key, Action<XView, XEventInfo> function)
         {
             view.EventParams.EventOrCreate(eventType).AddFunction(key, function);
         }
 
-        public static void AddEvent(this XView view, XEventType eventType, string key, XFunction<XEventInfo> function)
+        public static void AddEvent(this XView view, XEventType eventType, string key, Action<XEventInfo> function)
         {
             view.EventParams.EventOrCreate(eventType).AddFunction(key, (v, info) =>
             {
@@ -229,12 +237,10 @@ namespace XcyUI.expansions
             var width = view.Width;
             var height = view.Height;
             view.StartLayout();
-            view.IsMeasured = false;
-            if ((width != view.Width || height != view.Height) && width > 0 && height > 0 && !(view.Parent?.Parent is XLazy))
+            if ((width != view.Width || height != view.Height) && (width > 0 || height > 0) && !(view.Parent?.Parent is XLazy))
             {
                 BubbleUpLayout(view.Parent);
             }
-            view.IsMeasured = true;
         }
 
         public static void NotifyLazy(this XView view)
@@ -249,6 +255,11 @@ namespace XcyUI.expansions
                 return;
             }
             NotifyLazy(view.Parent);
+        }
+
+        public static void RefreshCache(this XView view)
+        {
+            view.DrawCache.IsRefreshCache = true;
         }
 
         internal static void RefreshParentCache(this XView view)
@@ -281,7 +292,7 @@ namespace XcyUI.expansions
         {
             view.LayoutParams.Reset();
             view.Style.Reset();
-            view.EventParams.Event(XEventType.Dispose)?.Invoke(view, null);
+            view.EventParams.Event(XEventType.Dispose)?.Invoke(view, XEventInfo.Empty);
             view.EventParams.Clear();
             if(view is XGroup)
             {
@@ -307,19 +318,32 @@ namespace XcyUI.expansions
             if (group != null)
             {
                 var maxScollerWidth = group.ChildSize.Width - group.ContentRect.Width;
-                return maxScollerWidth< 0 ||( maxScollerWidth == -group.Scroller.ScrollerWidth && maxScollerWidth != 0);
+                return maxScollerWidth<= 0 ||( maxScollerWidth == -group.Scroller.ScrollerWidth && maxScollerWidth != 0);
             }
             return false;
         }
 
-        public static void ModifyChild(this XView view, XFunction<XView> function)
+        public static bool IsScrolledToLeft(this XGroup group)
+        {
+            if (group != null)
+            {
+                return group.Scroller.ScrollerWidth == 0;
+            }
+            return false;
+        }
+
+        public static void ModifyChild(this XView view, Action<XView> function)
         {
             function?.Invoke(view);
             for (int i = 0; i < view.ChildCount(); i++)
             {
-                function?.Invoke(view.ChildElemnt(i));
                 ModifyChild(view.ChildElemnt(i), function);
             }
+        }
+
+        public static XStyle ToStyle(this XColor color)
+        {
+            return new XStyle() { Background = new XBrush(color) };
         }
     }
 }

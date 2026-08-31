@@ -5,7 +5,7 @@ using XcyUI.models;
 
 namespace XcyUI.theme
 {
-    public class XThemeColors
+    public class XThemeColor
     {
         // 主色调
         public XColor Primary = new XColor(64,158,255);
@@ -79,14 +79,15 @@ namespace XcyUI.theme
         public XColor OnBackground = new XColor(255, 255, 255);
 
         // 交互状态色
-        public XColor Hover = XColors.Black.Copy(0.06f);
-        public XColor Pressed = XColors.Black.Copy(0.12f);
-        public XColor Selected = XColors.Black.Copy(0.03f);
+        private XColor _actionColor => XTheme.DarkModeState.Value ? XColors.White : XColors.Black;
+        public XColor Hover => _actionColor.Copy(0.06f);
+        public XColor Pressed => _actionColor.Copy(0.12f);
+        public XColor Selected => _actionColor.Copy(0.03f);
 
         public float DisabledAlpha = 0.5f;        
     }
 
-    public class XThemeDarkColors : XThemeColors
+    public class XThemeDarkColors : XThemeColor
     {
        public XThemeDarkColors()
         {
@@ -190,8 +191,7 @@ namespace XcyUI.theme
     public class XThemeWeights
     {
         public float Large = 700f;
-        public float Button = 500f;
-        public float Middle = 400f;
+        public float Middle = 500f;
         public float Low = 300f;
     }
 
@@ -209,8 +209,8 @@ namespace XcyUI.theme
         public XShadow Card = new XShadow()
         {
             Dy = 2,
-            Blur = 12,
-            Color = XColors.Black.Copy(0.1f)
+            Blur = 24,
+            Color = XColors.Black.Copy(0.2f)
         };
 
         public XShadow MinCard = new XShadow()

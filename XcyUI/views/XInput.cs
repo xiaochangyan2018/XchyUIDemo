@@ -5,6 +5,8 @@ using XcyUI.utils;
 using XcyUI.animation;
 using System.Threading;
 using XcyUI.theme;
+using XcyUI.events;
+using XcyUI.expansions;
 
 namespace XcyUI.views
 {
@@ -41,7 +43,7 @@ namespace XcyUI.views
                     rect.Y = charItems[index].Y;
                     if (isLast)
                     {
-                        rect.X = charItems[index].RenderRect.TopRightPoint.X;
+                        rect.X = charItems[index].RenderRect.RightTop.X;
                     }
                 }
                 else
@@ -61,7 +63,7 @@ namespace XcyUI.views
             CurorStyle = new XStyle();
             CurorStyle.Background = new XBrush() { StartColor = XColors.Black };
             SelectedStyle = new XStyle();
-            SelectedStyle.Background = new XBrush() { StartColor = XThemeManager.Theme.Colors.PrimaryLight3.Copy(0.9f) };
+            SelectedStyle.Background = new XBrush() { StartColor = XTheme.Color.PrimaryLight3.Copy(0.9f) };
             EventParams.EventOrCreate(XEventType.Down);
             EventParams.EventOrCreate(XEventType.KeyPress);
             EventParams.EventOrCreate(XEventType.Focused);
@@ -93,7 +95,7 @@ namespace XcyUI.views
             if (!string.IsNullOrEmpty(Hint))
             {
                 var font = Font.Copy();
-                font.Color = font.Color.Copy(XThemeManager.Theme.Colors.PlaceholderText);
+                font.Color = font.Color.Copy(XTheme.Color.PlaceholderText);
                 MesaureText(Hint,font, hintRows, new List<XChar>());
             }
             if(curorIndex > Text.Length)
@@ -294,7 +296,7 @@ namespace XcyUI.views
             }
         }
 
-        internal void Select(int index, int length)
+        public void Select(int index, int length)
         {
             selectedIndex = index;
             selectedLength = length;
@@ -313,6 +315,20 @@ namespace XcyUI.views
                 }
                 rows[i] = row;
             }
+            Invalidate();
+        }
+
+        public void Focus(bool focus,bool isSelect = false)
+        {
+            if (isSelect)
+            {
+                Select(0, Text?.Length ?? 0);
+            }
+            XEvent.FocusView = this;
+            curorIndex = Text.Length;
+            Focused = focus;
+            isShowCursor = focus;
+            ChangeImmPosition();
             Invalidate();
         }
 
@@ -340,7 +356,7 @@ namespace XcyUI.views
 
         private void OnKeyPress(XEventInfo info)
         {
-            if (ReadOnly) return;
+            if (ReadOnly || info.isAbandoned) return;
             switch (info.KeyChar)
             {
                 case XKeyChar.LeftDelete:                    

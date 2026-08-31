@@ -1,45 +1,45 @@
-﻿using XcyUI.widgets;
+﻿using XcyUI.theme;
+using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.theme.XThemeManager;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder TextBody(this XViewBuilder builder)
+        public static XModify TextBody(this XModify builder)
         {
-            builder.Color(Theme.Colors.PrimaryText).FontSize(Theme.Sizes.Body).FontWeight(Theme.Weights.Middle);
+            builder.Color(XTheme.Color.PrimaryText).FontSize(XTheme.Size.Body).FontWeight(XTheme.Weight.Middle);
             return builder;
         }
 
-        public static XViewBuilder TextCaption(this XViewBuilder builder)
+        public static XModify TextCaption(this XModify builder)
         {
-            builder.Color(Theme.Colors.PlaceholderText).FontSize(Theme.Sizes.Caption);
+            builder.Color(XTheme.Color.PlaceholderText).FontSize(XTheme.Size.Caption);
             return builder;
         }
 
-        public static XViewBuilder H1(this XViewBuilder builder)
+        public static XModify H1(this XModify builder)
         {
-            builder.Color(Theme.Colors.RegularText).FontSize(Theme.Sizes.H1).FontWeight(Theme.Weights.Large);
+            builder.Color(XTheme.Color.RegularText).FontSize(XTheme.Size.H1).FontWeight(XTheme.Weight.Large);
             return builder;
         }
 
-        public static XViewBuilder H2(this XViewBuilder builder)
+        public static XModify H2(this XModify builder)
         {
-            builder.Color(Theme.Colors.RegularText).FontSize(Theme.Sizes.H2).FontWeight(Theme.Weights.Large);
+            builder.Color(XTheme.Color.RegularText).FontSize(XTheme.Size.H2).FontWeight(XTheme.Weight.Large);
             return builder;
         }
 
-        public static XViewBuilder H3(this XViewBuilder builder)
+        public static XModify H3(this XModify builder)
         {
-            builder.Color(Theme.Colors.RegularText)
-                .FontSize(Theme.Sizes.H3).FontWeight(Theme.Weights.Large);
+            builder.Color(XTheme.Color.RegularText)
+                .FontSize(XTheme.Size.H3).FontWeight(XTheme.Weight.Large);
             return builder;
         }
 
-        public static XViewBuilder SmallText(this XViewBuilder builder)
+        public static XModify SmallText(this XModify builder)
         {
-            builder.Color(Theme.Colors.SecondaryText).FontSize(Theme.Sizes.Small).FontWeight(Theme.Weights.Large);
+            builder.Color(XTheme.Color.SecondaryText).FontSize(XTheme.Size.Small).FontWeight(XTheme.Weight.Large);
             return builder;
         }
     }

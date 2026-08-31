@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using XcyUI.events;
@@ -10,7 +9,6 @@ using XcyUI.utils;
 using XcyUI.views;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.Controls
 {
@@ -38,11 +36,7 @@ namespace XcyUI.Controls
             return rects;
         }
 
-        public static XViewBuilder Resize(this XViewBuilder builder)
-        {
-            return builder.Resize(true, true, true, true);
-        }
-        public static XViewBuilder Resize(this XViewBuilder builder, bool left = false, bool top = false, bool right = false, bool bottom = false)
+        public static XModify Resize(this XModify builder, bool left = false, bool top = false, bool right = false, bool bottom = false, bool layout = true)
         {
             string eventKey = "Resize_key";
             var align = XAlignment.None;
@@ -97,7 +91,6 @@ namespace XcyUI.Controls
 
             builder.View.AddEvent(XEventType.Move, "resize_move", (v, info) =>
             {
-                stopwatch.Restart();
                 if (align == XAlignment.None) return;
                 var x_dist = info.Point.X - point.X;
                 var y_dist = info.Point.Y - point.Y;
@@ -132,35 +125,46 @@ namespace XcyUI.Controls
                 var width = v.Width;
                 height -= y_dist;
                 width -= x_dist;
-                width = Math.Max(width, 0);
-                height = Math.Max(height, 0);
+                if (layout)
+                {
+                    width = Math.Max(width, 0);
+                    height = Math.Max(height, 0);
 
-                var size = new XSize(0, 0);
-                if (y_dist != 0)
-                {
-                    view.LayoutParams.Height = height;
-                    size.Height = height;
+                    var size = new XSize(0, 0);
+                    if (y_dist != 0)
+                    {
+                        view.LayoutParams.Height = height;
+                        size.Height = height;
+                    }
+                    if (x_dist != 0)
+                    {
+                        v.LayoutParams.Width = width;
+                        size.Width = width;
+                    }
+                    v.EventParams.Event(XEventType.Move).Value = size;
+                    v.BubbleUpLayout();
                 }
-                if (x_dist != 0)
-                {
-                    v.LayoutParams.Width = width;
-                    size.Width = width;
-                }
-                RenderImp.lockInvalidate = true;
-                v.EventParams.Event(XEventType.Move).Value = size;
-                v.BubbleUpLayout();
+                info.Value = (x_dist, y_dist, align);
                 v.EventParams.Event(XEventType.Resize)?.Invoke(v, info);
                 point = info.Point;
-                RenderImp.lockInvalidate = false;
                 (v.Parent ?? v).Invalidate();
-                stopwatch.Stop();
-                Console.WriteLine("resize times::::" + stopwatch.ElapsedMilliseconds);
             });
             return builder;
         }
-        private readonly static Stopwatch stopwatch = new Stopwatch();
 
-        public static XViewBuilder HoverBackgroundColor(this XViewBuilder builder, XColor color, bool isFadeIn = false, string key = "HoverBackgroundColor")
+
+        public static XModify HoverBackgroundAllColor(this XModify builder, XColor color, string key = "HoverBackgroundAllColor")
+        {
+            var style = builder.View.Style;
+            var old = style.Background.StartColor;
+            builder.ToggleHover((b,isHover)=>
+            {
+                b.BackgroundAll(isHover ? color : old).View.Invalidate();
+            });
+            return builder;
+        }
+
+        public static XModify HoverBackgroundColor(this XModify builder, XColor color, bool isFadeIn = false, string key = "HoverBackgroundColor")
         {
             var style = builder.View.Style;
             var old = style.Background;
@@ -169,8 +173,8 @@ namespace XcyUI.Controls
             XState<float> animateValue = null;
             if (isFadeIn)
             {
-                visibleState = XWidget.StateValueOf(false);
-                animateValue = XWidget.AnimateFloatOf(visibleState, animate =>
+                visibleState = XCompose.StateValueOf(false);
+                animateValue = XCompose.AnimateFloatOf(visibleState, animate =>
                 {
                     animate.OnCancel = () =>
                     {
@@ -214,11 +218,12 @@ namespace XcyUI.Controls
             }
             return builder;
         }
-        public static XViewBuilder HoverBorderColor(this XViewBuilder builder, XColor color, string key = "HoverBorderColor")
+        public static XModify HoverBorderColor(this XModify builder, XColor color)
         {
+            string eventKey = "HoverBorderColor";
             if (color.IsEmpty)
             {
-                builder.ToggleHover(isHover => { }, key);
+                builder.ToggleHover(isHover => { }, eventKey);
                 return builder;
             }
             var oldBorder = builder.View.Style.Border;
@@ -227,12 +232,12 @@ namespace XcyUI.Controls
             {
                 var border = isHover ? oldBorder.Copy(color) : oldBorder;
                 builder.Border(border).View.Invalidate();
-            }, key);
+            }, eventKey);
         }
 
-        public static XViewBuilder Drag(this XViewBuilder builder, XDragType type = XDragType.Vertical, XFunction<XViewBuilder, XEventInfo> onDrag = null, XRect? dragRangRect = null, [CallerLineNumber] int key = 0)
+        public static XModify Drag(this XModify builder, XDragType type = XDragType.Vertical, Action<XModify, XEventInfo> onDrag = null, XRect? dragRangRect = null, [CallerLineNumber] int key = 0)
         {
-            var point = XWidget.StateValueOf(new XPoint());
+            var point = XCompose.StateValueOf(new XPoint());
             var zIndex = builder.View.LayoutParams.ZIndex;
             builder
                 .OnDown((b, info) =>
@@ -273,7 +278,7 @@ namespace XcyUI.Controls
             return builder.InterceptEvent(XEventType.Move);
         }
 
-        public static XViewBuilder HoverCursor(this XViewBuilder builder, XCursorType cursorType, string eventKey = "hoverCursor", [CallerLineNumber] int key = 0)
+        public static XModify HoverCursor(this XModify builder, XCursorType cursorType, string eventKey = "hoverCursor", [CallerLineNumber] int key = 0)
         {
             return builder.OnHover((b, info) =>
             {
@@ -294,13 +299,19 @@ namespace XcyUI.Controls
             }, eventKey);
         }
 
-        public static XViewBuilder OnResize(this XViewBuilder builder, XFunction<XViewBuilder> function, string key = "OnResize")
+        public static XModify OnResize(this XModify builder, Action<XModify> function, string key = "OnResize")
         {
-            builder.View.AddEvent(XEventType.Resize, key, (v, info) => function(new XViewBuilder(v)));
+            builder.View.AddEvent(XEventType.Resize, key, (v, info) => function(new XModify(v)));
             return builder;
         }
 
-        public static XViewBuilder HoverColor(this XViewBuilder builder, XColor color, string key = "HoverColor")
+        public static XModify OnResize(this XModify builder, Action<XModify,XEventInfo> function, string key = "OnResize")
+        {
+            builder.View.AddEvent(XEventType.Resize, key, (v, info) => function(new XModify(v),info));
+            return builder;
+        }
+
+        public static XModify HoverColor(this XModify builder, XColor color, string key = "HoverColor")
         {
             XBrush oldColor = default;
             builder.View.ModifyChild(n =>
@@ -334,19 +345,18 @@ namespace XcyUI.Controls
             return builder;
         }
 
-        public static XViewBuilder OnEnter(this XViewBuilder builder,XFunction<string> funtion, string key = "OnEnter")
+        public static XModify OnEnter(this XModify builder, Action<string> funtion, string key = "OnEnter")
         {
-            if (!(builder.View is XInput)) return builder;
-            return builder.KeyPress((b, info) =>
+            return builder.FirstInput(n =>
             {
-                if(info.KeyValue == XKeyValue.Enter)
-                {
-                    b.AsView<XInput>()?.Also(n =>
-                    {
-                        funtion.Invoke(n.Text);
-                    });
-                }
-            }, key);
+                n.KeyPress((b, info) =>
+                 {
+                     if (info.KeyValue == XKeyValue.Enter)
+                     {
+                         funtion?.Invoke(n.Content());
+                     }
+                 }, key);
+            });
         }
     }
 }

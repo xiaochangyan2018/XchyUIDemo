@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using XcyUI.events;
 using XcyUI.expansions;
 using XcyUI.models;
@@ -7,25 +8,30 @@ using XcyUI.utils;
 
 namespace XcyUI.views
 {
-    public class XView : XRenderRect
+    public class XView
     {
-        public int Key { get; set; }
-        public XLayoutParams LayoutParams { get; private set; }
-        public XEventParams EventParams { get; private set; }
-        internal XDrawCache DrawCache { get; private set; }
-        public XView Parent { get; set; }
+        public string Key;
+        public int Tabindex = -1;
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
+        protected XStyle _style;
+        protected XLayoutParams _layoutParams;
+        protected XEventParams _eventParams;
+        public XDrawCache Cache;
 
+        public XView Parent;
         protected int measureHashCode;
-        protected XPoint lastPoint;
-        internal bool IsMeasured{ get; set; }
-        public XRect ContentRect => getContentRect();
 
-        protected virtual XRect getContentRect()
-        {
-            var rect = RenderRect;
-            rect.ScaleRevert(LayoutParams.Padding);
-            return rect;
-        }
+        public XStyle Style => _style ??= new();
+        public XLayoutParams LayoutParams => _layoutParams ??= new();
+        public XEventParams EventParams => _eventParams ??= new();
+        internal XDrawCache DrawCache => Cache ??= new();
+
+        public XRect ContentRect => RenderRect.InsetSpace(LayoutParams.Padding);
+
+        public XRect RenderRect => new XRect(X, Y, Width, Height);
 
         public XPoint Location
         {
@@ -37,16 +43,9 @@ namespace XcyUI.views
                 Y = value.Y;
                 if (isChanged)
                 {
-                    EventParams.Event(XEventType.LocationChanged)?.Invoke(this, null);
+                    InvokeEvent(XEventType.LocationChanged);
                 }
             }
-        }
-        public XView()
-        {
-            LayoutParams = new XLayoutParams();
-            EventParams = new XEventParams();
-            DrawCache = new XDrawCache();
-            IsMeasured = true;
         }
 
         public void StartLayout()
@@ -57,22 +56,14 @@ namespace XcyUI.views
 
         public virtual void Layout()
         {
-            EventParams.Event(XEventType.LayoutStart)?.Invoke(this, null);
+            InvokeEvent(XEventType.LayoutStart);
+            _eventParams?.Event(XEventType.LayoutStart)?.Invoke(this, XEventInfo.Empty);
             OnLayout();
-            EventParams.Event(XEventType.LayoutEnd)?.Invoke(this, null);
-            if (DrawCache != null)
+            InvokeEvent(XEventType.LayoutEnd);
+            if (Cache != null)
             {
-                DrawCache.IsRefreshCache = true;
+                Cache.IsRefreshCache = true;
             }
-            EventParams.Remove(XEventType.FirstLayout)?.Invoke(this, null);
-            if (lastPoint.X!=0 && lastPoint.Y != 0 && X!=0 && Y!=0)
-            {
-                if (lastPoint.X != X || lastPoint.Y != Y)
-                {
-                    EventParams.Event(XEventType.LocationChanged)?.Invoke(this, null);
-                }
-            }
-            lastPoint = Location;
         }
 
         public virtual bool IsNeedMeasure()
@@ -82,38 +73,41 @@ namespace XcyUI.views
 
         public virtual void Measure()
         {
-            if (!IsMeasured) return;
-            EventParams.Event(XEventType.MeasureStart)?.Invoke(this, null);
+            if (_eventParams?.Contains(XEventType.MeasureStart) == true)
+            {
+                this.MeasureSize();
+                InvokeEvent(XEventType.MeasureStart);
+            }
+            this.MeasureSize();
             OnMeasure();
             measureHashCode = LayoutParams.MeasureHashCode();
-            EventParams.Event(XEventType.MeasureEnd)?.Invoke(this, null);
+            InvokeEvent(XEventType.MeasureEnd);
         }
 
         protected virtual void OnMeasure()
         {
-            this.MeasureSize();
+            this.MeasureMaxOrMin();
         }
         protected virtual void OnLayout() { }
 
-        public override void Translation(int x, int y)
+        public void MoveTo(int x, int y)
         {
-            base.Translation(x, y);
-            if (lastPoint.X != 0 && lastPoint.Y != 0 && X != 0 && Y != 0)
-            {
-                if (lastPoint.X != X || lastPoint.Y != Y)
-                {
-                    EventParams.Event(XEventType.LocationChanged)?.Invoke(this, null);
-                }
-            }
-            lastPoint = Location;
+            Translation(x - X, y - Y);
         }
 
+        public virtual void Translation(int x, int y)
+        {
+            Location = new XPoint(X + x, Y + y);
+        }
+        public void InvokeEvent(XEventType type)
+        {
+            _eventParams?.Event(type)?.Invoke(this, XEventInfo.Empty.Copy(type));
+        }
         public virtual void OnEvent(XEventInfo info)
         {
-
         }
 
-        public override void Draw()
+        public virtual void Draw()
         {
             var rect = RenderRect;
             var rootRect = this.RootView().RenderRect;
@@ -121,37 +115,51 @@ namespace XcyUI.views
             {
                 return;
             }
-            Style.ClipPadding = LayoutParams.Padding;
-            if (Style.IsOverDraw)
+            if (_style == null)
             {
-                EventParams?.Event(XEventType.Draw)?.Invoke(this, null);
-                RenderImp.Draw(RenderRect, Style, DrawCache, OnDraw);
+                OnDraw();
+                return;
+            }
+            _style.ClipPadding = LayoutParams.Padding;           
+            if (_style.IsOverDraw)
+            {
+                InvokeEvent(XEventType.Draw);
+                RenderImp.Draw(RenderRect, _style, DrawCache, OnDraw);
             }
             else
             {
-                RenderImp.Draw(RenderRect, Style, DrawCache, OnDraw);
-                EventParams?.Event(XEventType.Draw)?.Invoke(this, null);
+                RenderImp.Draw(RenderRect, _style, DrawCache, OnDraw);
+                InvokeEvent(XEventType.Draw);
             }
         }
 
         protected virtual void OnDraw()
         {
-            EventParams?.Event(XEventType.DrawUnder)?.Invoke(this, null);
+            InvokeEvent(XEventType.DrawUnder);
             DrawContent();
-            EventParams?.Event(XEventType.DrawOver)?.Invoke(this, null);
+            InvokeEvent(XEventType.DrawOver);
         }
 
         protected virtual void DrawContent()
         {
 
         }
-        public bool IsCache => DrawCache.EnableCache;
-        public void EnableCache( bool enable, XCacheType type = XCacheType.Pictrue)
+        public bool IsCache => Cache?.EnableCache == true;
+
+        public void SetBlurSigma(int blurSigma)
         {
-            if (enable != DrawCache.EnableCache)
+            DrawCache.BlurSigma = blurSigma;
+        }
+        public void EnableCache(bool enable, XCacheType type = XCacheType.Pictrue)
+        {
+            if (DrawCache.EnableCache != enable)
             {
-                DrawCache.EnableCache = enable;
-                DrawCache.CacheType = type;
+                Cache.EnableCache = enable;
+                Cache.CacheType = type;
+                if (!Cache.EnableCache)
+                {
+                    Cache.Clear();
+                }
             }
         }
 
@@ -162,9 +170,9 @@ namespace XcyUI.views
 
         public virtual void Dispose()
         {
-            EventParams?.Event(XEventType.Dispose)?.Invoke(this, null);
-            EventParams?.Clear();
-            DrawCache?.Clear();
+            InvokeEvent(XEventType.Dispose);
+            _eventParams?.Clear();
+            Cache?.Clear();
             if (this == XEvent.FocusView)
             {
                 XEvent.ClearFocusView();

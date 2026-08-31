@@ -19,10 +19,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\XcyUI.Controls\XcyUI.Controls.csproj" />
+    <ProjectReference Include="..\XcyUI.Desktop\XcyUI.Desktop.csproj" />
     <ProjectReference Include="..\XcyUI.GLFW\XcyUI.GLFW.csproj" />
     <ProjectReference Include="..\XcyUI.SkiaSharp\XcyUI.SkiaSharp.csproj" />
     <ProjectReference Include="..\XcyUI\XcyUI.csproj" />
 	<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
+	<PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
 
 </Project>

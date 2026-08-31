@@ -1,26 +1,40 @@
 ﻿using System;
 using XcyUI.expansions;
 using XcyUI.models;
+using XcyUI.theme;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
-using static XcyUI.widgets.XWidget;
+using static XcyUI.widgets.XCompose;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder DateTimeInput(DateTime dateTime, XFunction<DateTime> onSelected = null, DateTime? startTime = null, DateTime? endTime = null, int cellHeight = 50)
+        public static XModify DateTimeInput(DateTime? dateTime = null, Action<DateTime> onSelected = null, DateTime? startTime = null, DateTime? endTime = null, int cellHeight = 50)
         {
             var visibleState = StateValueOf(false);
             var dateTimeState = StateValueOf(dateTime, isReset: true);
-            return Row(dateTimeState, date =>
+            return Box(dateTimeState, date =>
             {
-                Input(date.ToString("yyyy-MM-dd")).Weight(1).SingleLine();
-                Icon(SvgRes.Calendar).IconSize(20);
-            }).PrimaryInput().Space(5).Width(200).Popover(visibleState, ()=>
+                Input(date?.ToString("yyyy-MM-dd")??"")
+                .Width(FILL)
+                .PrimaryInput()
+                .ReadOnly()
+                .Padding(right: XTheme.Size.Space16 * 2 + 20)
+                .KeyPress((b, info) =>
+                {
+                    if (info.KeyValue == XKeyValue.Enter)
+                    {
+                        b.View.Parent.EventParams.EventOrCreate(XEventType.Click)?.Invoke(b.View.Parent, new XEventInfo() { EventType = XEventType.Click });
+                    }
+                })
+                .Click(() => { }, false)
+                .SingleLine().InputType(InputType.Date);
+                Icon(SvgRes.Calendar).IconSize(20).Alignment(XAlignment.RightCenter).Margin(right:XTheme.Size.Space16);
+            })
+            .Size(200, WRAP).Popover(visibleState, content: ()=>
             {
-                DateTimePicker(dateTime, date =>
+                DateTimePicker(dateTimeState.Value ?? DateTime.Now, date =>
                 {
                     dateTimeState.Value = date;
                     visibleState.Value = false;
@@ -28,13 +42,13 @@ namespace XcyUI.Controls
 
             },defaultEffect:false);
         }
-        public static XViewBuilder DateTimePicker(DateTime dateTime, XFunction<DateTime> onSelected = null, DateTime? startTime = null, DateTime? endTime = null, int cellHeight = 50)
+        public static XModify DateTimePicker(DateTime dateTime, Action<DateTime> onSelected = null, DateTime? startTime = null, DateTime? endTime = null, int cellHeight = 50)
         {
             startTime = startTime ?? new DateTime(1900, 1, 1);
             endTime = endTime ?? new DateTime(3000, 12, 31);
             var typeState = StateValueOf(0); // 0 选择天，1选择年，2选择月
-            var currentDateTimeState = StateValueOf(dateTime);
-            var selectedDateTimeState = StateValueOf(dateTime);
+            var currentDateTimeState = StateValueOf(dateTime, true);
+            var selectedDateTimeState = StateValueOf(dateTime, true);
             var startYearState = StateValueOf(0);
             currentDateTimeState.Join(startYearState);
             string[] months = { "一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月" };
@@ -141,12 +155,12 @@ namespace XcyUI.Controls
                 }).Width(FILL).HorizontalAlignment(XHorizontalAlignment.Bisect);
             }
 
-            void SetHoverStyle(XViewBuilder builder, bool isCurrent)
+            void SetHoverStyle(XModify builder, bool isCurrent)
             {
-                var background = isCurrent ? xTheme.Colors.Primary : XColors.Transparent;
-                var color = isCurrent ? xTheme.Colors.White : xTheme.Colors.PrimaryText;
-                var hoverColor = isCurrent ? xTheme.Colors.White :
-                xTheme.Colors.Primary;
+                var background = isCurrent ? XTheme.Color.Primary : XColors.Transparent;
+                var color = isCurrent ? XTheme.Color.White : XTheme.Color.PrimaryText;
+                var hoverColor = isCurrent ? XTheme.Color.White :
+                XTheme.Color.Primary;
                 builder.Background(background)
                    .Color(color)
                    .HoverColor(hoverColor);
@@ -176,7 +190,7 @@ namespace XcyUI.Controls
                             SetHoverStyle(builder, year == currentDateTimeState.Value.Year);
                         });
                     }
-                }).Size(FILL, WRAP).Cells(4).Space(20);
+                }).Size(FILL, WRAP).Cells(4).Space(20).Padding(20);
             }
 
             void SelectMonthPanel()
@@ -200,10 +214,10 @@ namespace XcyUI.Controls
                         }, defaultEffect: false)
                         .Also(builder =>
                         {
-                            SetHoverStyle(builder, currentDateTimeState.Value.Year == DateTime.Now.Year &&  mouth == currentDateTimeState.Value.Month);
+                            SetHoverStyle(builder, mouth == currentDateTimeState.Value.Month);
                         });
                     }
-                }).Size(FILL, WRAP).Cells(4).Space(20);
+                }).Size(FILL, WRAP).Cells(4).Space(20).Padding(20);
             }
 
             // 选择天
@@ -227,21 +241,21 @@ namespace XcyUI.Controls
                             DateTime day = startDate.AddDays(row * 7 + col);
                             bool isCurrentMonth = day.Year == currentMouth.Year && day.Month == currentMouth.Month;
                             bool isToday = day.Date == DateTime.Today;
-                            var textColor = xTheme.Colors.PrimaryText;
+                            var textColor = XTheme.Color.PrimaryText;
                             if (isToday)
                             {
-                                textColor = xTheme.Colors.Primary;
+                                textColor = XTheme.Color.Primary;
                             }
                             else if (!isCurrentMonth)
                             {
-                                textColor = xTheme.Colors.DarkBorder;
+                                textColor = XTheme.Color.DarkBorder;
                             }
                             var isOutDate = day < startTime || day > endTime;
                             Box(() =>
                             {
                                 Text(day.Day.ToString())
                                 .Size(cellHeight - 10)
-                                .FontWeight(isToday ? xTheme.Weights.Large : xTheme.Weights.Middle)
+                                .FontWeight(isToday ? XTheme.Weight.Large : XTheme.Weight.Middle)
                                 .Color(textColor)
                                 .TextAlignment(XAlignment.Center)
                                 .Circle()
@@ -261,18 +275,18 @@ namespace XcyUI.Controls
                                     if (selectDate == day)
                                     {
                                         builder
-                                        .Background(xTheme.Colors.Primary)
-                                        .Color(xTheme.Colors.White)
-                                        .HoverColor(xTheme.Colors.White);
+                                        .Background(XTheme.Color.Primary)
+                                        .Color(XTheme.Color.White)
+                                        .HoverColor(XTheme.Color.White);
                                     }
                                     else
                                     {
                                         builder
-                                       .Background(xTheme.Colors.Transparent)
+                                       .Background(XTheme.Color.Transparent)
                                        .Color(textColor)
-                                       .HoverColor(xTheme.Colors.Primary);
+                                       .HoverColor(XTheme.Color.Primary);
                                     }
-                                    builder.EnableEvent(!isOutDate).Alpha(isOutDate ? xTheme.Colors.DisabledAlpha : 1);
+                                    builder.EnableEvent(!isOutDate).Alpha(isOutDate ? XTheme.Color.DisabledAlpha : 1);
                                 });
                             }).Size(WRAP).Height(cellHeight);
                         }
@@ -288,7 +302,7 @@ namespace XcyUI.Controls
                 if (type == 0)
                 {
                     WeekBar();
-                    Spacer(1).Width(FILL).Background(xTheme.Colors.BaseBorder);
+                    Spacer(1).Width(FILL).Background(XTheme.Color.BaseBorder);
                     SelectDayPanel();
                 }
                 else if (type == 1)
@@ -299,7 +313,7 @@ namespace XcyUI.Controls
                 {
                     SelectMonthPanel();
                 }
-            }).Size(400, WRAP);
+            }).Size(400, WRAP).Alignment(XAlignment.TopCenter);
         }
     }
 }

@@ -1,73 +1,65 @@
-﻿using System.Collections.Generic;
-using System.Data;
+﻿using System;
+using System.Collections.Generic;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.models
 {
     public class XEventParams
     {
-        public bool Focusable { get; set; }
-        public bool Enable { get; set; }
-        public Dictionary<XEventType, XEventFunction> Events { get; private set; }
-        public XEventParams()
-        {
-            Enable = true;
-        }
+        public bool Focusable;
+        public bool Enable = true;
+        private Dictionary<XEventType, XEventFunction> _events;
+        public Dictionary<XEventType, XEventFunction> Events => _events ??= new();
 
         public XEventFunction EventOrCreate(XEventType eventType)
         {
-            if (Events == null)
+            if(Events.TryGetValue(eventType, out XEventFunction function) == false)
             {
-                Events = new Dictionary<XEventType, XEventFunction>();
+                function = new XEventFunction();
+                Events[eventType] = function;
             }
-            if (!Events.ContainsKey(eventType))
-            {
-                Events[eventType] = new XEventFunction();
-            }
-            return Events[eventType];
+            return function;
         }
 
         public XEventFunction Event(XEventType eventType)
         {
-            if (Events?.ContainsKey(eventType) == true)
+            if (_events?.TryGetValue(eventType, out XEventFunction function) == true)
             {
-                return Events[eventType];
+                return function;
             }
             return null;
         }
 
         public bool Contains(XEventType eventType)
         {
-            return Events!= null && Events.ContainsKey(eventType);
+            return _events?.ContainsKey(eventType) == true;
         }
 
         public XEventFunction Remove(XEventType eventType)
         {
-            if (Events?.ContainsKey(eventType) == true)
+            if (_events?.TryGetValue(eventType, out XEventFunction function) == true)
             {
-                var eventFunction = Events[eventType];
                 Events.Remove(eventType);
-                return eventFunction;
+                return function;
             }
             return null;
         }
 
-        public XFunction<XView, XEventInfo> RemoveFunction(XEventType eventType, string key)
+        public Action<XView, XEventInfo> RemoveFunction(XEventType eventType, string key)
         {
             return Event(eventType)?.RemoveFunction(key);
         }
 
         public void Clear()
         {
-            if (Events != null)
+            if (_events != null)
             {
-                foreach (var key in Events.Keys)
+                foreach (var key in _events.Keys)
                 {
-                    Events[key].Clear();
+                    _events[key].Clear();
                 }
-                Events.Clear();
-                Events = null;
+                _events.Clear();
+                _events = null;
             }
         }
     }

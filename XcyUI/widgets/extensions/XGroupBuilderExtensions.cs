@@ -2,15 +2,15 @@
 using System.Runtime.CompilerServices;
 using XcyUI.expansions;
 using XcyUI.models;
+using XcyUI.theme;
 using XcyUI.utils;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.widgets.extensions
 {
     public static class XGroupBuilderExtensions
     {
-        public static XViewBuilder Space(this XViewBuilder builder,int space)
+        public static XModify Space(this XModify builder,int space)
         {
             if (builder.View is XGroup)
             {
@@ -19,25 +19,25 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
-        public static XViewBuilder HorizontalAlignment(this XViewBuilder builder, XHorizontalAlignment alignment)
+        public static XModify HorizontalAlignment(this XModify builder, XHorizontalAlignment alignment)
         {
             if (builder.View is XColumn)
             {
-                ((XColumn)builder.View).HorizontalAlign = alignment;
+                ((XColumn)builder.View).HorizontalAlignment = alignment;
             }
             return builder;
         }
 
-        public static XViewBuilder VerticalAlignment(this XViewBuilder builder, XVerticalAlignment alignment)
+        public static XModify VerticalAlignment(this XModify builder, XVerticalAlignment alignment)
         {
             if (builder.View is XColumn)
             {
-                ((XColumn)builder.View).VerticalAlign = alignment;
+                ((XColumn)builder.View).VerticalAlignment = alignment;
             }
             return builder;
         }
 
-        public static XViewBuilder FixedItem(this XViewBuilder builder, bool isFixed)
+        public static XModify FixedItem(this XModify builder, bool isFixed = true)
         {
             if (builder.View is XLazy)
             {
@@ -46,11 +46,11 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
-        public static XViewBuilder ToggleHover(this XViewBuilder builder, XFunction<bool> function, string eventKey = "ToggleHover", [CallerLineNumber] int key = 0)
+        public static XModify ToggleHover(this XModify builder, Action<bool> function, string eventKey = "ToggleHover", [CallerLineNumber] int key = 0)
         {
             return ToggleHover(builder, (b, isHover) => function.Invoke(isHover), eventKey, key);
         }
-        public static XViewBuilder ToggleHover(this XViewBuilder builder, XFunction<XViewBuilder, bool> function, string eventKey = "ToggleHover", [CallerLineNumber] int key = 0)
+        public static XModify ToggleHover(this XModify builder, Action<XModify, bool> function, string eventKey = "ToggleHover", [CallerLineNumber] int key = 0)
         {
             if (function == null)
             {
@@ -58,7 +58,7 @@ namespace XcyUI.widgets.extensions
                 builder.View.RemoveEvent(XEventType.Leave, eventKey);
                 return builder;
             }
-            var isHover = XWidget.StateValueOf(false, key: key);
+            var isHover = XCompose.StateValueOf(false, key: key);
             return builder
                 .OnHover((b, _) =>
                 {
@@ -67,7 +67,6 @@ namespace XcyUI.widgets.extensions
                         function?.Invoke(b, true);
                     }
                     isHover.Value = true;
-
                 }, eventKey)
                 .OnLeave((v, _) =>
                 {
@@ -82,21 +81,34 @@ namespace XcyUI.widgets.extensions
         }        
 
 
-        public static XViewBuilder FadeIn(this XViewBuilder builder, bool isIn = true, int delay = 0, [CallerLineNumber] int key = 0)
+        public static XModify FadeIn(this XModify builder, bool isIn = true,int duration = 500, int delay = 0, float startValue = 0, Action finished = null, [CallerLineNumber] int key = 0)
         {           
-            var visibleState = XWidget.StateValueOf(true, true, key: key);            
-            var animateValue = XWidget.AnimateFloatOf(visibleState, animate=> animate.Delay = delay, key: key);
-            var isInState = XWidget.StateValueOf(isIn, true, key: key);
+            var visibleState = XCompose.StateValueOf(true, true, key: key);
+            var enableCache = builder.View.DrawCache.EnableCache;
+            var animateValue = XCompose.AnimateFloatOf(visibleState, animate =>
+            {
+                animate.Delay = delay;
+                animate.Duration = duration;
+                animate.OnFinished = () =>
+                {
+                    finished?.Invoke();
+                    if (!enableCache)
+                    {
+                        builder.EnableCache(enableCache);
+                    }
+                };
+            }, key: key);
             builder.Bind(animateValue, (b, value) =>
             {
-                value = isInState.Value ? value : (1 - value);
+                value = startValue + (1 - startValue) * value;
+                value = isIn ? value : (1 - value);
                 builder.Alpha(value);
             });
             return builder;
         }
 
 
-        public static XViewBuilder Scrollable(this XViewBuilder builder, bool isVertical = true, bool enableScollerBar = true, bool enableWheel = true)
+        public static XModify Scrollable(this XModify builder, bool isVertical = true, bool enableScollerBar = true, bool enableWheel = true)
         {
             
             if (builder.View is XGroup && builder.View.EventParams.Event(XEventType.Wheel) == null && builder.AsView<XGroup>()?.Scroller == null)
@@ -112,8 +124,8 @@ namespace XcyUI.widgets.extensions
                 builder.Clip();
                 view.Scroller = new XScroller();
                 view.Scroller.Init(view);
-                var vBarBuilder = new XViewBuilder(view.Scroller.VerticalScollerBar);
-                var hBarBuilder = new XViewBuilder(view.Scroller.HorizontalScollerBar);
+                var vBarBuilder = new XModify(view.Scroller.VerticalScollerBar);
+                var hBarBuilder = new XModify(view.Scroller.HorizontalScollerBar);
                 vBarBuilder.DefaultClickEffect().InterceptEvent(XEventType.Move)
                     .InterceptEvent(XEventType.Hover).EnableCache(true).InVisible(false);
                 hBarBuilder.DefaultClickEffect().EnableCache(true)
@@ -125,17 +137,21 @@ namespace XcyUI.widgets.extensions
                     {
                         if (isHover)
                         {
-                            XWidget.SetCurrentView(vBarBuilder.View);
-                            vBarBuilder.Visible(true).FadeIn(true);
-                            XWidget.SetCurrentView(hBarBuilder.View);
-                            hBarBuilder.Visible(true).FadeIn(true);
+                            vBarBuilder.Background(XTheme.Color.InfoLight2);
+                            hBarBuilder.Background(XTheme.Color.InfoLight2);
+                            vBarBuilder.View.RefreshCache();
+                            hBarBuilder.View.RefreshCache();
+                            XCompose.SetCurrentView(vBarBuilder.View);
+                            vBarBuilder.Visible(true).FadeIn(true, 250);
+                            XCompose.SetCurrentView(hBarBuilder.View);
+                            hBarBuilder.Visible(true).FadeIn(true, 250);
                         }
                         else
                         {
-                            XWidget.SetCurrentView(vBarBuilder.View);
-                            vBarBuilder.FadeIn(false);
-                            XWidget.SetCurrentView(hBarBuilder.View);
-                            hBarBuilder.FadeIn(false);
+                            XCompose.SetCurrentView(vBarBuilder.View);
+                            vBarBuilder.FadeIn(false,250);
+                            XCompose.SetCurrentView(hBarBuilder.View);
+                            hBarBuilder.FadeIn(false,250);
                         }
                     });
                 }
@@ -143,7 +159,7 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
-        public static XViewBuilder ScrolledTo(this XViewBuilder builder, bool isVertical, int size)
+        public static XModify ScrolledTo(this XModify builder, bool isVertical, int size)
         {
             builder.AsView<XGroup>()?.Also(n =>
             {
@@ -159,13 +175,13 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
-        public static XViewBuilder Scrolled(this XViewBuilder builder, bool isVertical, int size)
+        public static XModify Scrolled(this XModify builder, bool isVertical, int size)
         {
             builder.AsView<XGroup>()?.Also(n => n.OnScolled(isVertical, size));
             return builder;
         }
 
-        public static XViewBuilder TranslationChilds(this XViewBuilder builder, int x, int y)
+        public static XModify TranslationChilds(this XModify builder, int x, int y)
         {
             builder.AsView<XGroup>()?.Also(n =>
             {
@@ -184,7 +200,7 @@ namespace XcyUI.widgets.extensions
         }
 
 
-        public static XViewBuilder ScrolledToIndex(this XViewBuilder builder, int index, int templateIndex= 0, bool isSmooth = false )
+        public static XModify ScrolledToIndex(this XModify builder, int index, int templateIndex= 0, bool isSmooth = false )
         {
             RenderImp.PostToQueue(() =>
             {
@@ -193,16 +209,16 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
-        public static XViewBuilder FixedCells(this XViewBuilder builder, int cells)
+        public static XModify FixedCells(this XModify builder, int cells)
         {
             ((XLazyGrid)builder.View)?.Also(n => n.Cells = cells);
             return builder;
         }
 
-        public static XViewBuilder ContentAlignment(this XViewBuilder builder, XAlignment alignment)
+        public static XModify ContentAlignment(this XModify builder, XAlignment alignment)
         {
 
-            builder.AsView<XBox>()?.Also(n => n.ContentAlign = alignment);
+            builder.AsView<XBox>()?.Also(n => n.ContentAlignment = alignment);
             return builder;
         }
 
@@ -211,7 +227,7 @@ namespace XcyUI.widgets.extensions
             var removedEvent = view.EventParams.Event(XEventType.Removed);
             if (removedEvent != null)
             {
-                removedEvent.Invoke(view, null);
+                removedEvent.Invoke(view, XEventInfo.Empty);
             }
             else
             {
@@ -219,26 +235,26 @@ namespace XcyUI.widgets.extensions
             }
         }
 
-        public static XViewBuilder Cells(this XViewBuilder builder, int cells)
+        public static XModify Cells(this XModify builder, int cells)
         {
             builder.AsView<XFlow>()?.Also(n => n.Cells = cells);
             return builder;
         }
 
-        public static XViewBuilder Colspan(this XViewBuilder builder, int span)
+        public static XModify Colspan(this XModify builder, int span)
         {
             builder.View.LayoutParams.Colspan = span;
             return builder;
         }
 
-        public static XViewBuilder NotifyLazy(this XViewBuilder builder)
+        public static XModify NotifyLazy(this XModify builder)
         {
             builder.View.NotifyLazy();
             builder.View.Invalidate();
             return builder;
         }
 
-        public static XViewBuilder ResetParams(this XViewBuilder builder)
+        public static XModify ResetParams(this XModify builder)
         {
             builder.View.LayoutParams.Reset();
             builder.View.Style.Reset();

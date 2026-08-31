@@ -1,21 +1,20 @@
 ﻿using XcyUI.expansions;
 using XcyUI.models;
 using XcyUI.views;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.widgets.extensions
 {
     public static class XIconBuilderExtensions
     {
         
-        public static XViewBuilder ResId(this XViewBuilder builder, int resId)
+        public static XModify ResId(this XModify builder, int resId)
         {
             builder.AsView<XIcon>()?.Also(n => n.ResId = resId);
             return builder;
         }
 
 
-        public static XViewBuilder IconSize(this XViewBuilder builder, int width,int height)
+        public static XModify IconSize(this XModify builder, int width,int height)
         {
             builder.AsView<XIcon>()?.Also(n =>
             {
@@ -25,25 +24,25 @@ namespace XcyUI.widgets.extensions
             return builder;
         }
 
-        public static XViewBuilder IconSize(this XViewBuilder builder, int size)
+        public static XModify IconSize(this XModify builder, int size)
         {
             return builder.IconSize(size, size);
         }
 
-        public static XViewBuilder ScaleType(this XViewBuilder setter, XScaleType scaleType)
+        public static XModify ScaleType(this XModify setter, XScaleType scaleType)
         {
 
             setter.AsView<XIcon>()?.Also(n => n.ScaleType = scaleType);
             return setter;
         }
 
-        public static XViewBuilder Color(this XViewBuilder setter, XColor color)
+        public static XModify Color(this XModify setter, XColor color)
         {
             setter.AsView<XIcon>()?.Also(n => n.Color = new XBrush(color));
             setter.AsView<XText>()?.Also(n => n.Font.Color = new XBrush(color));
             return setter;
         }
-        public static XViewBuilder Color(this XViewBuilder setter, XBrush color)
+        public static XModify Color(this XModify setter, XBrush color)
         {
             setter.AsView<XIcon>()?.Also(n => n.Color = color);
             setter.AsView<XText>()?.Also(n => n.Font.Color = color);

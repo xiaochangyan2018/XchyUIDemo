@@ -5,7 +5,6 @@ using XcyUI.models;
 using XcyUI.utils;
 using XcyUI.views;
 using XcyUI.widgets;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.templates
 {
@@ -38,14 +37,14 @@ namespace XcyUI.templates
         internal int SumWidth { get; set; }
         internal int Space { get; set; }
         internal bool IsNotifyChanged { get; set; }
-        protected XFunction<XViewBuilder, object, int> onViewSetting;
+        protected Action<XModify, object, int> onViewSetting;
         internal List<object> Datas { get; set; }
         internal Dictionary<int, int> CacheSize { get; private set; }
         internal Dictionary<int, int> GroupSize { get; private set; }
         internal LinkedHashMap<int, XLazyItem> FirstCache { get; private set; }
         internal LinkedHashMap<int, XLazyItem> SecondCache { get; private set; }
 
-        internal XFunction<XGroup, object> Content { get; set; }
+        internal Action<XGroup, object,int> Content { get; set; }
         internal XLazyTemplate()
         {
             Datas = new List<object>();
@@ -135,11 +134,11 @@ namespace XcyUI.templates
 
         public void RefreshContent(XLazyItem item)
         {
-            onViewSetting?.Invoke(new XViewBuilder(item.View), item.Data, item.Index);
-            Content?.Invoke(item.View, item.Data);
+            onViewSetting?.Invoke(new XModify(item.View), item.Data, item.Index);
+            Content?.Invoke(item.View, item.Data, item.Index);
         }
 
-        public void OnViewSetting<T>(XFunction<XViewBuilder,T> function)
+        public void OnViewSetting<T>(Action<XModify,T> function)
         {
             this.onViewSetting = (setter, t, index) =>
             {
@@ -147,7 +146,7 @@ namespace XcyUI.templates
             };
         }
 
-        public void OnViewSetting<T>(XFunction<XViewBuilder, T, int> function)
+        public void OnViewSetting<T>(Action<XModify, T, int> function)
         {
             this.onViewSetting = (setter, t, Index) =>
             {
@@ -158,9 +157,9 @@ namespace XcyUI.templates
         internal virtual XLazyItem CreateItem(XLazy lazy, int index)
         {
             var box = new XBox();
-            box.Key = index;
+            box.Key = index.ToString();
             box.Parent = lazy;
-            box.ContentAlign = XAlignment.LeftTop;
+            box.ContentAlignment = XAlignment.LeftTop;
             box.LayoutParams.Width = MeausreWidth;
             box.LayoutParams.Height = MeausreHeight;
             var item = new XLazyItem(index, box, Datas[index]);
@@ -194,7 +193,6 @@ namespace XcyUI.templates
             if (!GroupSize.ContainsKey(groupIndex))
             {
                 GroupSize.Add(groupIndex, GroupItemCount * Width);
-                Console.WriteLine("kkkkkk:::" + (GroupItemCount * Width));
             }
             return GroupSize[groupIndex];
         }

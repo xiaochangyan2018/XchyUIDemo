@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XcyUI.Controls\XcyUI.Controls.csproj" />
+    <ProjectReference Include="..\XcyUI.GLFW\XcyUI.GLFW.csproj" />
+    <ProjectReference Include="..\XcyUI.SkiaSharp\XcyUI.SkiaSharp.csproj" />
+    <ProjectReference Include="..\XcyUI\XcyUI.csproj" />
+  </ItemGroup>
+
+</Project>

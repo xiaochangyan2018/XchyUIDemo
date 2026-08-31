@@ -3,32 +3,22 @@ namespace XcyUI.models
 {
     public class XStyle
     {
-        // 是否剪切padding
-        public bool IsClipPadding { get; set; }
-        public bool IsClipContent { get; set; }
-        public bool IsOverDraw { get; set; }
-        public XSpace ClipPadding { get; set; }
-        // 背景色
-        public XBrush Background { get; set; }
-        // 边框
-        public XBorder Border { get; set; }
-        // 圆角
-        public XSpace Radius { get; set; }
-        // 阴影
-        public XShadow Shadow { get; set; }
+        public static readonly XStyle Empty = new();
+        public bool IsClip;
+        public bool IsClipPadding;
+        public bool IsOverDraw;
+        public bool IsOnlySet;
+        public XSpace ClipPadding;
+        public XBrush Background;
+        public XBorder Border;
+        public XSpace Radius;
+        public XShadow Shadow;
         
-        public XStyle()
-        {
-            IsOverDraw = false;
-        }
-
-        public int StyleHashCode()
-        {
-            return (Background, Border, Radius, Shadow).GetHashCode();
-        }
-
         public void Reset()
         {
+            //IsClip = false;
+            //IsClipPadding = false;
+            IsOverDraw = false;
             ClipPadding = new XSpace();
             Background = new XBrush();
             Border = new XBorder();
@@ -45,6 +35,9 @@ namespace XcyUI.models
                 Border = Border,
                 Radius = Radius,
                 Shadow = Shadow,
+                IsClip = IsClip,
+                IsClipPadding = IsClipPadding,
+                ClipPadding = ClipPadding
             };
         }
     }    

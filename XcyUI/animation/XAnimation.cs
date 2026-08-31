@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using XcyUI.utils;
-using static XcyUI.models.XFunctions;
 
 namespace XcyUI.animation
 {
@@ -25,7 +26,12 @@ namespace XcyUI.animation
         {
             return animation.animates.Count > 0;
         }
-        
+
+        public static int AnimatCount()
+        {
+            return animation.animates.Count;
+        }
+
         /// <summary>
         /// 创建一个默认的动画
         /// </summary>
@@ -52,13 +58,16 @@ namespace XcyUI.animation
             return item;
         }
 
-        internal static void Push(XAnimate item)
+        public static void Push(XAnimate item)
         {
             item.StartTime = _stopwatch.ElapsedMilliseconds + item.Delay;
-            animation.animates.Add(item);
+            if (!animation.animates.Contains(item))
+            {
+                animation.animates.Add(item);
+            }
         }
 
-        internal static void Remove(XAnimate item)
+        public static void Remove(XAnimate item)
         {
             animation.animates.Remove(item);
         }
@@ -75,15 +84,16 @@ namespace XcyUI.animation
             var currentTime = _stopwatch.ElapsedMilliseconds;
             redAnimates.Clear();
             redAnimates.AddRange(animates);
-            foreach (var item in redAnimates)
+            for (int i=0;i< redAnimates.Count;i++)
             {
+                var item = redAnimates[i];
                 if (currentTime - item.StartTime > item.Duration)
                 {
                     if (item.Times == int.MaxValue)
                     {
                         RenderImp.Post(() =>
                         {
-                            item.OnCallback?.Invoke(item.Values[item.Values.Length - 1]);
+                            item.OnCallback?.Invoke(item.Values[item.Values.Length - 1], item.Values.Length - 1);
                         });
                         item.StartTime = _stopwatch.ElapsedMilliseconds;
                     }
@@ -92,16 +102,16 @@ namespace XcyUI.animation
                         item.Times--;
                         RenderImp.Post(() =>
                         {
-                            item.OnCallback?.Invoke(item.Values[item.Values.Length - 1]);
+                            item.OnCallback?.Invoke(item.Values[item.Values.Length - 1], item.Values.Length - 1);
                         });
                         item.StartTime = _stopwatch.ElapsedMilliseconds;
                     }
                     else
                     {
-                        
+
                         RenderImp.Post(() =>
                         {
-                            item.OnCallback?.Invoke(item.Values[item.Values.Length - 1]);
+                            item.OnCallback?.Invoke(item.Values[item.Values.Length - 1], item.Values.Length - 1);
                             item.OnFinished?.Invoke();
                             animates.Remove(item);
                         });
@@ -120,10 +130,10 @@ namespace XcyUI.animation
                     var interpolatedT = keySegment.Interpolator?.Invoke(localT) ?? localT;
                     // 获取具体的值
                     var value = keySegment.KeyFrame0.Value + interpolatedT * (keySegment.KeyFrame1.Value - keySegment.KeyFrame0.Value);
-                    
+
                     RenderImp.Post(() =>
                     {
-                        item.OnCallback?.Invoke(value);
+                        item.OnCallback?.Invoke(value, keySegment.Index);
                     });
                 }
             }
@@ -141,7 +151,8 @@ namespace XcyUI.animation
         internal static readonly SegmentValue Empty = new SegmentValue();
         internal KeyFrameSegment KeyFrame0 { get; set; }
         internal KeyFrameSegment KeyFrame1 { get; set; }
-        internal XFunctionResult<float> Interpolator { get; set; }
+        internal Func<float,float> Interpolator { get; set; }
+        internal int Index { get; set; }
     }
 
     public class XAnimate
@@ -155,17 +166,17 @@ namespace XcyUI.animation
         public int Duration { get; set; }
         public int Delay { get; set; }
         public int Times { get; set; }
-        public XFunctionResult<float> Interpolator { get; set; }
+        public Func<float, float> Interpolator { get; set; }
 
-        public XFunctionResult<float>[] Interpolators { get; private set; }
-        public XFunction<float> OnCallback { get; set; }
-        public XFunction OnCancel { get; set; }
-        public XFunction OnTimeEnd { get; set; }
-        public XFunction OnFinished { get; set; }
+        public Func<float, float>[] Interpolators { get; private set; }
+        public Action<float, int> OnCallback { get; set; }
+        public Action OnCancel { get; set; }
+        public Action OnStart { get; set; }
+        public Action OnFinished { get; set; }
 
         internal List<KeyFrameSegment> KeyFrames { get; private set; }
 
-        public float Value(float input, float start,float end)
+        public float Value(float input, float start, float end)
         {
             return start + (end - start) * input;
         }
@@ -176,25 +187,56 @@ namespace XcyUI.animation
             SetKeyValues();
         }
 
-        public void SetInterpolators(params XFunctionResult<float>[] interpolators)
+        public void SetInterpolators(params Func<float, float>[] interpolators)
         {
             Interpolators = interpolators;
         }
 
+        public void SetKeyFrameTimes(params float[] times)
+        {
+            Duration = (int)times.Sum();
+            var sum = times.Sum();
+            var currentTime = 0f;
+            for (int i = 1; i < KeyFrames.Count; i++)
+            {
+                var keyTime = currentTime + times[i - 1] / sum;
+                currentTime += keyTime;
+                KeyFrames[i] = new KeyFrameSegment()
+                {
+                    KeyTime = keyTime,
+                    Value = KeyFrames[i].Value
+                };
+            }
+        }
+
+        public void ReStart()
+        {
+            OnCancel?.Invoke();
+            OnStart?.Invoke();
+            XAnimation.Push(this);
+        }
+
         public void Start()
         {
-            XAnimation.Push(this);
+            RenderImp.PostToQueue(() =>
+            {
+                OnStart?.Invoke();
+                XAnimation.Push(this);
+            });
         }
 
         public void Stop()
         {
-            OnCancel?.Invoke();
-            XAnimation.Remove(this);
+            RenderImp.PostToQueue(() =>
+            {
+                OnCancel?.Invoke();
+                XAnimation.Remove(this);
+            });
         }
         private void SetKeyValues()
         {
             KeyFrames.Clear();
-            var avg = 1f / (Values.Length -1);
+            var avg = 1f / (Values.Length - 1);
             for (int i = 0; i < Values.Length; i++)
             {
                 KeyFrameSegment keyValue = new KeyFrameSegment();
@@ -218,11 +260,11 @@ namespace XcyUI.animation
                         var segmentValue = new SegmentValue();
                         segmentValue.KeyFrame0 = first;
                         segmentValue.KeyFrame1 = second;
-                        segmentValue.Interpolator = Interpolators != null && Interpolators.Length > i? segmentValue.Interpolator = Interpolators[i]: segmentValue.Interpolator = Interpolator;
+                        segmentValue.Index = i;
+                        segmentValue.Interpolator = Interpolators != null && Interpolators.Length > i ? segmentValue.Interpolator = Interpolators[i] : segmentValue.Interpolator = Interpolator;
                         return segmentValue;
                     }
                 }
-
             }
             return SegmentValue.Empty;
         }

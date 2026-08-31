@@ -1,109 +1,133 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using XcyUI.Core.Utils;
 using XcyUI.models;
 
 namespace XcyUI.views
 {
     public class XColumn: XGroup
     {
-        public XHorizontalAlignment HorizontalAlign { get; set; }
-        public XVerticalAlignment VerticalAlign { get; set; }
-
-        public XColumn()
-        {
-            HorizontalAlign = XHorizontalAlignment.Center;
-            VerticalAlign = XVerticalAlignment.Top;
-            LayoutParams.Width = XLayoutParams.Fill;
-            LayoutParams.Height = XLayoutParams.Fill;
-        }
+        public XHorizontalAlignment HorizontalAlignment = XHorizontalAlignment.Center;
+        public XVerticalAlignment VerticalAlignment = XVerticalAlignment.Top;
+        protected List<XView> _weightItems = new();
 
         protected override void MeasureChilds()
-        {
-            DoMeasureChilds();
-        }
-
-        private void DoMeasureChilds()
         {
             var contentRect = ContentRect;
             contentRect.X = 0;
             contentRect.Y = 0;
-            var childs = visibleChilds;
+            var childs = _layoutChilds;
             var spaceSize = Space * (childs.Count - 1);
-            if (VerticalAlign == XVerticalAlignment.Bisect)
+            if (VerticalAlignment == XVerticalAlignment.Bisect)
             {
                 var bisectHeight = (contentRect.Height - spaceSize) / childs.Count;
-                childs.ForEach(n => n.LayoutParams.Height = bisectHeight - n.LayoutParams.Margin.VerticalSize);
-            }
-            var sumWeights = 0;
-            var weightItems = new List<XView>();
-            var normalHeight = 0;
-            List<XView> retryMeasureChilds = null;
-            for (int i = 0; i < childs.Count; i++)
-            {
-                var child = childs[i];
-                sumWeights += child.LayoutParams.Weight;
-                if (child.LayoutParams.Weight == 0)
+                foreach (var child in childs)
                 {
+                    child.LayoutParams.Height = bisectHeight - child.LayoutParams.Margin.VerticalSize;
                     child.Measure();
-                    if (child.Width <= 0 || child.Height <= 0)
-                    {
-                        if (retryMeasureChilds == null)
-                        {
-                            retryMeasureChilds = new List<XView>();
-                        }
-                        retryMeasureChilds.Add(child);
-                    }
-                    normalHeight += child.Height + child.LayoutParams.Margin.VerticalSize + Space;
+                    ChildRectWidth = Math.Max(child.Width + child.LayoutParams.Margin.HorizontalSize, ChildRectWidth);
+                    ChildRectHeight += child.Height + child.LayoutParams.Margin.VerticalSize;
                 }
-                else
+            }
+            else
+            {
+                var sumWeights = 0;
+                _weightItems.Clear();
+                var normalHeight = 0;
+                _retryMeasureChilds.Clear();
+                for (int i = 0; i < childs.Count; i++)
                 {
-                    weightItems.Add(child);
+                    var child = childs[i];
+                    sumWeights += child.LayoutParams.Weight;
+                    if (child.LayoutParams.Weight == 0)
+                    {
+                        child.Measure();
+                        if (child.Width <= 0 || child.Height <= 0)
+                        {
+                            _retryMeasureChilds.Add(child);
+                        }
+                        normalHeight += child.Height + child.LayoutParams.Margin.VerticalSize + Space;
+                        ChildRectWidth = Math.Max(child.Width + child.LayoutParams.Margin.HorizontalSize, ChildRectWidth);
+                        ChildRectHeight += child.Height + child.LayoutParams.Margin.VerticalSize;
+                    }
+                    else
+                    {
+                        _weightItems.Add(child);
+                    }
+                }
+
+                if (LayoutParams.IsWrapHeight)
+                {
+                    foreach (var child in _weightItems)
+                    {
+                        child.Measure();
+                        ChildRectWidth = Math.Max(child.Width + child.LayoutParams.Margin.HorizontalSize, ChildRectWidth);
+                        ChildRectHeight += child.Height + child.LayoutParams.Margin.VerticalSize;
+                        normalHeight += child.Height + child.LayoutParams.Margin.VerticalSize + Space;
+                    }
+                    if (LayoutParams.MaxHeight > 0)
+                    {
+                        Height = Math.Min(LayoutParams.MaxHeight, normalHeight);
+                    }
+                    if (LayoutParams.MaxHeight > 0 && Height == LayoutParams.MaxHeight)
+                    {
+                        foreach (var child in _weightItems)
+                        {
+                            ChildRectHeight -= child.Height + child.LayoutParams.Margin.VerticalSize;
+                            normalHeight -= child.Height + child.LayoutParams.Margin.VerticalSize + Space;
+                        }
+                    }
+                    else
+                    {
+                        _weightItems.Clear();
+                    }
+                }
+
+                var weightHeight = Height - normalHeight - (_weightItems.Count - 1) * Space - LayoutParams.Padding.VerticalSize;
+                foreach (var n in _weightItems)
+                {
+                    n.LayoutParams.Height = (int)((float)n.LayoutParams.Weight / sumWeights * weightHeight - n.LayoutParams.Margin.VerticalSize);
+                    n.Measure();
+                    ChildRectWidth = Math.Max(n.Width + n.LayoutParams.Margin.HorizontalSize, ChildRectWidth);
+                    ChildRectHeight += n.Height + n.LayoutParams.Margin.VerticalSize;
                 }
             }
 
-            var weightHeight = Height - normalHeight - (weightItems.Count - 1) * Space - LayoutParams.Padding.VerticalSize;
-            weightItems.ForEach(n =>
-            {
-                n.LayoutParams.Height = (int)((float)n.LayoutParams.Weight / sumWeights * weightHeight - n.LayoutParams.Margin.VerticalSize);
-                n.Measure();
-            });
-
-            ChildRectHeight = childs.Sum(n => n.Height + n.LayoutParams.Margin.VerticalSize) + spaceSize;
-            ChildRectWidth = childs.Max(n => n.Width + n.LayoutParams.Margin.HorizontalSize);
+            ChildRectHeight += Math.Max(spaceSize, 0);
             MeasureWrapSize();
-            retryMeasureChilds?.ForEach(n => n.Measure());
+            foreach (var item in _retryMeasureChilds)
+            {
+                item.Measure();
+            }
         }
 
         protected override void OnLayout()
         {
             var contentRect = ContentRect;
-            var childs = visibleChilds;
+            var childs = _layoutChilds;
             var scollerHeight = Scroller?.ScrollerHeight ?? 0;
             var scollerWidth = Scroller?.ScrollerWidth ?? 0;
-            var top = Y + (int)LayoutParams.Padding.Top;
-            var verticalAlign = VerticalAlign;
+            var top = Y + (int)LayoutParams.Padding.Top + scollerHeight;
+            var left = scollerWidth;
+            var verticalAlignment = VerticalAlignment;
             for (int i = 0; i < childs.Count; i++)
             {
                 var child = childs[i];
                 top += child.LayoutParams.MarginTop;
-                var rect = child.RenderRect;
-                var align = child.LayoutParams.Alignment != XAlignment.None ? child.LayoutParams.Alignment : GetHorizontalAlign();
-                rect.Move(contentRect, align, child.LayoutParams.Margin);
-
-                if (VerticalAlign == XVerticalAlignment.Bettwen)
-                {
-                    verticalAlign = i == 0 ? XVerticalAlignment.Top : i == childs.Count - 1 ? XVerticalAlignment.Bottom : XVerticalAlignment.Center;
-                }
-
-                child.Location = new XPoint(rect.X + scollerWidth, top + RemainHeight(verticalAlign) + scollerHeight);
+                
+                var align = child.LayoutParams.Alignment != XAlignment.None ? child.LayoutParams.Alignment : GetHorizontalAlignment();
+                var point = XRectUtils.GetDockedPoint(contentRect, child.RenderRect, align, child.LayoutParams.Margin);
+                
+                child.Location = new XPoint(point.X + left, top + RemainHeight(verticalAlignment));
                 top += child.Height + child.LayoutParams.MarginBottom + Space;
                 child.Layout();
             }
         }
 
-        private XAlignment GetHorizontalAlign()
+        private XAlignment GetHorizontalAlignment()
         {
-            return HorizontalAlign == XHorizontalAlignment.Left ? XAlignment.LeftCenter : HorizontalAlign == XHorizontalAlignment.Right ? XAlignment.RightCenter : XAlignment.Center;
+            return HorizontalAlignment == XHorizontalAlignment.Left ? XAlignment.LeftCenter : HorizontalAlignment == XHorizontalAlignment.Right ? XAlignment.RightCenter : XAlignment.Center;
         }
         private int RemainHeight(XVerticalAlignment alignment)
         {

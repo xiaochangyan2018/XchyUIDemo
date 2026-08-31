@@ -121,7 +121,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
         }
@@ -166,7 +166,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
          }
@@ -214,7 +214,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
         }
@@ -263,7 +263,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
         }
@@ -314,7 +314,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
         }
@@ -385,7 +385,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
         }
@@ -421,7 +421,7 @@ namespace XcyUI.Controls
                 foreach (var key in icons.Keys)
                 {
                     var svg = RenderImp.GetSvg(icons[key]);
-                    XThemeManager.SvgResources.TryAdd(key, svg);
+                    XTheme.SvgResources.TryAdd(key, svg);
                 }
             });
         }

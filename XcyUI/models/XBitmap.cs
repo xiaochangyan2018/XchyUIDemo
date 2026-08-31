@@ -1,10 +1,20 @@
 ﻿
+using System;
+
 namespace XcyUI.models
 {
     public class XBitmap
     {
-        public int Width { get; set; }
-        public int Height { get; set; }
+        public int Width;
+        public int Height;
+        public IDisposable Cache;
         public byte[] Buffers;
+    }
+
+    public enum XScaleType
+    {
+        Normal,
+        FixXY,
+        FixCenter
     }
 }

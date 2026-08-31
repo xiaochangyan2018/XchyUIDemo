@@ -1,14 +1,15 @@
-﻿using XcyUI.models;
+﻿using System;
+using XcyUI.models;
+using XcyUI.theme;
 using XcyUI.widgets;
 using XcyUI.widgets.extensions;
-using static XcyUI.models.XFunctions;
-using static XcyUI.widgets.XWidget;
+using static XcyUI.widgets.XCompose;
 
 namespace XcyUI.Controls
 {
     public static partial class Controls
     {
-        public static XViewBuilder Switch(XState<bool> selectedState, XFunction<bool> onSwitched = null)
+        public static XModify Switch(XState<bool> selectedState, Action<bool> onSwitched = null)
         {
             var visibleState = StateValueOf(false);
             var animateState = AnimateFloatOf(visibleState);
@@ -18,8 +19,8 @@ namespace XcyUI.Controls
             {
                 Spacer(30)
                 .Alignment(selectedState.Value ? XAlignment.RightCenter : XAlignment.LeftCenter)
-                .Background(xTheme.Light.BlankFill)
-                .Circle().Shadow(xTheme.Shadows.MinCard)
+                .Background(XTheme.Light.BlankFill)
+                .Circle().Shadow(XTheme.Shadow.MinCard)
                 .Bind(animateState, (builder, value) =>
                 {
                     if (visibleState.Value)
@@ -37,7 +38,7 @@ namespace XcyUI.Controls
             .Size(66, 33).Padding(horizontal: 2).Radius(16)
             .Bind(selectedState, (builder, isSelect) =>
             {
-                var backgroundColor = isSelect ? xTheme.Colors.Primary : xTheme.Colors.BaseBorder;
+                var backgroundColor = isSelect ? XTheme.Color.Primary : XTheme.Color.BaseBorder;
                 builder.Background(backgroundColor);
             })
             .Click(() =>
@@ -48,7 +49,7 @@ namespace XcyUI.Controls
                 onSwitched?.Invoke(selectedState.Value);
             });
         }
-        public static XViewBuilder Switch(bool enable, XFunction<bool> onSwitched = null)
+        public static XModify Switch(bool enable, Action<bool> onSwitched = null)
         {
             var selectedState = StateValueOf(enable, true);
             return Switch(selectedState, onSwitched);
